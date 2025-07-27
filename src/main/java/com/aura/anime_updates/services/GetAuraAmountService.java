@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 public class GetAuraAmountService {
     
     public String getAungKoAura() {
-        return "0";
+        return "aungkokonaing";
     }
     
     public String getApAura() {

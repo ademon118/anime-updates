@@ -2,9 +2,12 @@ package com.aura.anime_updates.api;
 
 import com.aura.anime_updates.services.GetAuraAmountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 //adding this @annotation makes this class a REST API/rest controller
 @RestController
@@ -15,15 +18,14 @@ public class AnimeShowsAPI {
 
     //Get mapping to make a get endpoint.PostMapping for post etc...
     @PostMapping("/aungko")
-    public String akAura() {
-        //here you will define what will happen when this endpoint is called and return the result
-        //change json format. format json any way you like.
-        //call services etc
-        return getAuraAmountService.getAungKoAura();
+    public ResponseEntity<Map<String, String>> akAura() {
+        String aura = getAuraAmountService.getAungKoAura();
+        return ResponseEntity.ok(Map.of("aura", aura));
     }
 
     @GetMapping("/ap")
-    public String apAura() {
-        return getAuraAmountService.getApAura();
+    public ResponseEntity<Map<String, String>> apAura() {
+        String aura = getAuraAmountService.getApAura();
+        return ResponseEntity.ok(Map.of("aura", aura));
     }
 }

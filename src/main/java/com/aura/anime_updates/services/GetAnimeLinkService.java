@@ -14,7 +14,7 @@ import java.util.List;
 
 @Service
 public class GetAnimeLinkService {
-    private static final String RSS_URL = "https://subsplease.org/rss/?t=1080";
+    private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
 
     public List<AnimeDownloadInfo> fetchAnimeDownloadLinks(){
         List<AnimeDownloadInfo> downloads = new ArrayList<>();

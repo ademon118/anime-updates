@@ -18,7 +18,7 @@ public class AnimeLinksAPI {
 
     @GetMapping("/downloads")
     public List<AnimeDownloadInfo> getDownloadLinks(){
-        return getAnimeLinkService.fetchAnimeDownloadLinks();
+        return getAnimeLinkService.getAllAnimeDownloadInfo();
     }
 
 

@@ -7,4 +7,6 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
 
     AnimeShow findByTitle(String title);
 
+    boolean existsByDownloadLink(String downloadLink);
+
 }

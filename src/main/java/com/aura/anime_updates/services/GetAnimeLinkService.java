@@ -13,36 +13,53 @@ import org.springframework.stereotype.Service;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class GetAnimeLinkService {
     private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
 
     private final AnimeShowRepository animeShowRepository;
+    private final AnimePersistenceService animePersistenceService;
 
-    public GetAnimeLinkService(final AnimeShowRepository animeShowRepository){
+    public GetAnimeLinkService(final AnimeShowRepository animeShowRepository,
+                               AnimePersistenceService animePersistenceService){
         this.animeShowRepository = animeShowRepository;
+        this.animePersistenceService = animePersistenceService;
     }
 
-    public List<AnimeDownloadInfo> fetchAnimeDownloadLinks(){
-        List<AnimeDownloadInfo> downloads = new ArrayList<>();
+    public void fetchAndSaveNewAnimeShows() {
         try {
             URL feedSource = new URL(RSS_URL);
             SyndFeedInput input = new SyndFeedInput();
             SyndFeed feed = input.build(new XmlReader(feedSource));
 
+            List<AnimeShow> animeShowToSave = new ArrayList<>();
             for (SyndEntry entry : feed.getEntries()) {
                 String title = entry.getTitle();
                 String link = entry.getLink();
-                AnimeShow anime = new AnimeShow(title,link);
-                animeShowRepository.save(anime);
-                downloads.add(new AnimeDownloadInfo(title, link));
+
+                // Only add if new downloadLink not already in DB
+                if (!animeShowRepository.existsByDownloadLink(link)) {
+                    AnimeShow anime = new AnimeShow(title, link);
+                    animeShowToSave.add(anime);
+                }
             }
-        }catch (Exception e){
+            if (!animeShowToSave.isEmpty()) {
+                animePersistenceService.saveAll(animeShowToSave);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-       return  downloads;
     }
+
+    // Called by API to fetch all saved anime from DB as DTO list
+    public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
+        return animeShowRepository.findAll()
+                .stream()
+                .map(a -> new AnimeDownloadInfo(a.getTitle(), a.getDownloadLink()))
+                .collect(Collectors.toList());
+    }
+
 }
 

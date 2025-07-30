@@ -11,8 +11,12 @@ import org.springframework.stereotype.Service;
 
 
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,12 +40,26 @@ public class GetAnimeLinkService {
 
             List<AnimeShow> animeShowToSave = new ArrayList<>();
             for (SyndEntry entry : feed.getEntries()) {
-                String title = entry.getTitle();
+                String rawTitle = entry.getTitle();
                 String link = entry.getLink();
+                String category = entry.getCategories().isEmpty() ? null : entry.getCategories().get(0).getName();
+                LocalDateTime releasedDate = entry.getPublishedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+                //To get only episode number from title
+                String episode = extractEpisodeNumber(rawTitle);
+
+
+                if( episode == null ||  category == null || !link.contains("nyaa.si")){
+                    continue;
+                }
+
+                //Title from category removing -1080
+                String cleanTitle = category.replaceAll("\\s*-\\s*1080", "").trim();
+
 
                 // Only add if new downloadLink not already in DB
                 if (!animeShowRepository.existsByDownloadLink(link)) {
-                    AnimeShow anime = new AnimeShow(title, link);
+                    AnimeShow anime = new AnimeShow(cleanTitle,link,episode,releasedDate);
                     animeShowToSave.add(anime);
                 }
             }
@@ -57,8 +75,16 @@ public class GetAnimeLinkService {
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
         return animeShowRepository.findAll()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(a.getTitle(), a.getDownloadLink()))
+                .map(a -> new AnimeDownloadInfo(a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate()))
                 .collect(Collectors.toList());
+    }
+
+
+    //Method for title trim
+    private String extractEpisodeNumber(String title){
+        Pattern pattern = Pattern.compile("\\-\\s*(\\d{2})\\s*\\(");
+        Matcher matcher = pattern.matcher(title);
+        return matcher.find()?matcher.group(1) : null;
     }
 
 }

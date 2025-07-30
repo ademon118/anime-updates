@@ -73,7 +73,7 @@ public class GetAnimeLinkService {
 
     // Called by API to fetch all saved anime from DB as DTO list
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
-        return animeShowRepository.findAll()
+        return animeShowRepository.findAllByOrderByReleasedDateDesc()
                 .stream()
                 .map(a -> new AnimeDownloadInfo(a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate()))
                 .collect(Collectors.toList());

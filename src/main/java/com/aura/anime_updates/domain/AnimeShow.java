@@ -29,7 +29,7 @@ public class AnimeShow {
     private LocalDateTime releasedDate;
 
     @CreatedDate
-    @Column(name = "created_at")
+    @Column(name = "created_at",updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp

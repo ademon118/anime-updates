@@ -75,7 +75,7 @@ public class GetAnimeLinkService {
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
         return animeShowRepository.findAllByOrderByReleasedDateDesc()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate()))
+                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate()))
                 .collect(Collectors.toList());
     }
 

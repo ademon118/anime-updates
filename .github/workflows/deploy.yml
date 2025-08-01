@@ -31,7 +31,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: rm -f /opt/anime-updates-server/anime-updates.jar
+          script: sudo rm -f /opt/anime-updates-server/anime-updates.jar
 
       - name: Copy JAR to root for scp
         run: cp build/libs/anime-updates.jar ./anime-updates.jar

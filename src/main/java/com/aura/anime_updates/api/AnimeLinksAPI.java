@@ -15,7 +15,7 @@ public class AnimeLinksAPI {
     @Autowired
     private  GetAnimeLinkService getAnimeLinkService;
 
-
+    //Need pagination
     @GetMapping("/downloads")
     public List<AnimeDownloadInfo> getDownloadLinks(){
         return getAnimeLinkService.getAllAnimeDownloadInfo();

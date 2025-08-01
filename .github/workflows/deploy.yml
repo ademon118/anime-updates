@@ -25,13 +25,16 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
+      - name: Copy JAR to root for scp
+        run: cp build/libs/anime-updates.jar ./anime-updates.jar
+
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/anime-updates.jar"
+          source: "anime-updates.jar"
           target: "/opt/anime-updates-server/"
 
       - name: Restart systemd service

@@ -8,13 +8,15 @@ public class AnimeDownloadInfo {
     private  String downloadlink;
     private  String episode;
     private LocalDateTime releasedDate;
+    private String fileName;
 
-    public AnimeDownloadInfo(Long id, String title, String downloadlink,String episode, LocalDateTime releasedDate){
+    public AnimeDownloadInfo(Long id, String title, String downloadlink,String episode, LocalDateTime releasedDate,String fileName){
         this.id = id;
         this.title = title;
         this.downloadlink = downloadlink;
         this.episode = episode;
         this.releasedDate = releasedDate;
+        this.fileName = fileName;
     }
 
     public Long getId() {
@@ -36,6 +38,8 @@ public class AnimeDownloadInfo {
     public LocalDateTime getReleasedDate(){
         return releasedDate;
     }
+
+    public String getFileName(){return fileName;}
 
 
 }

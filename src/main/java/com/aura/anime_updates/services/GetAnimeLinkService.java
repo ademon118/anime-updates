@@ -2,11 +2,14 @@ package com.aura.anime_updates.services;
 
 import com.aura.anime_updates.domain.AnimeShow;
 import com.aura.anime_updates.dto.AnimeDownloadInfo;
+import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
 import com.aura.anime_updates.repository.AnimeShowRepository;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 
@@ -47,6 +50,7 @@ public class GetAnimeLinkService {
 
                 //To get only episode number from title
                 String episode = extractEpisodeNumber(rawTitle);
+                String filename = rawTitle.replaceAll("\\.mkv$", "");
 
 
                 if( episode == null ||  category == null || !link.contains("nyaa.si")){
@@ -59,7 +63,7 @@ public class GetAnimeLinkService {
 
                 // Only add if new downloadLink not already in DB
                 if (!animeShowRepository.existsByDownloadLink(link)) {
-                    AnimeShow anime = new AnimeShow(cleanTitle,link,episode,releasedDate);
+                    AnimeShow anime = new AnimeShow(cleanTitle,link,episode,releasedDate,filename);
                     animeShowToSave.add(anime);
                 }
             }
@@ -75,7 +79,7 @@ public class GetAnimeLinkService {
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
         return animeShowRepository.findAllByOrderByReleasedDateDesc()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate()))
+                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate(),a.getFileName()))
                 .collect(Collectors.toList());
     }
 
@@ -85,6 +89,32 @@ public class GetAnimeLinkService {
         Pattern pattern = Pattern.compile("\\-\\s*(\\d{2})\\s*\\(");
         Matcher matcher = pattern.matcher(title);
         return matcher.find()?matcher.group(1) : null;
+    }
+
+    public AnimeDownloadInfoPage getAllAnimeDownloadInfoPaginated(int page,int size){
+        PageRequest pageable = PageRequest.of(page,size);
+        Page<AnimeShow> animePage = animeShowRepository.findAllByOrderByReleasedDateDesc(pageable);
+        return toDtoPage(animePage);
+    }
+
+    public AnimeDownloadInfoPage searchByTitle(String title,int page, int size){
+        PageRequest pageable = PageRequest.of(page,size);
+        Page<AnimeShow> animePage = animeShowRepository.findByTitleContainingIgnoreCaseOrderByReleasedDateDesc(title,pageable);
+        return toDtoPage(animePage);
+    }
+
+    private AnimeDownloadInfoPage toDtoPage(Page<AnimeShow> animePage){
+        List<AnimeDownloadInfo> content = animePage.getContent().stream()
+                .map(a -> new AnimeDownloadInfo(
+                        a.getId(),
+                        a.getTitle(),
+                        a.getDownloadLink(),
+                        a.getEpisode(),
+                        a.getReleasedDate(),
+                        a.getFileName()
+                )).collect(Collectors.toList());
+
+        return new AnimeDownloadInfoPage(content, animePage.getTotalElements(),animePage.getTotalPages());
     }
 
 }

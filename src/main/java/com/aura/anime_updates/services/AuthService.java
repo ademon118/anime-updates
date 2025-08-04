@@ -9,6 +9,7 @@ import com.aura.anime_updates.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,13 +41,16 @@ public class AuthService {
 
     public AuthResponse login(AuthRequest request){
         try{
-            authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUserName(),request.getPassword())
             );
             String token = jwtUtil.generateToken(request.getUserName());
             return new AuthResponse(token);
         }catch (AuthenticationException e){
             throw new RuntimeException("Invalid username or password");
+        } catch (Exception e) {
+            System.out.println(e);
+            return null;
         }
     }
 }

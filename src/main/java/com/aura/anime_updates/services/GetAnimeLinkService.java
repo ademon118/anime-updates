@@ -77,9 +77,9 @@ public class GetAnimeLinkService {
 
     // Called by API to fetch all saved anime from DB as DTO list
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
-        return animeShowRepository.findAllByOrderByReleasedDateDesc()
+        return animeShowRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getReleasedDate(),a.getFileName()))
+                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getCreatedAt(),a.getFileName()))
                 .collect(Collectors.toList());
     }
 
@@ -93,13 +93,13 @@ public class GetAnimeLinkService {
 
     public AnimeDownloadInfoPage getAllAnimeDownloadInfoPaginated(int page,int size){
         PageRequest pageable = PageRequest.of(page,size);
-        Page<AnimeShow> animePage = animeShowRepository.findAllByOrderByReleasedDateDesc(pageable);
+        Page<AnimeShow> animePage = animeShowRepository.findAllByOrderByCreatedAtDesc(pageable);
         return toDtoPage(animePage);
     }
 
     public AnimeDownloadInfoPage searchByTitle(String title,int page, int size){
         PageRequest pageable = PageRequest.of(page,size);
-        Page<AnimeShow> animePage = animeShowRepository.findByTitleContainingIgnoreCaseOrderByReleasedDateDesc(title,pageable);
+        Page<AnimeShow> animePage = animeShowRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(title,pageable);
         return toDtoPage(animePage);
     }
 
@@ -110,7 +110,7 @@ public class GetAnimeLinkService {
                         a.getTitle(),
                         a.getDownloadLink(),
                         a.getEpisode(),
-                        a.getReleasedDate(),
+                        a.getCreatedAt(),
                         a.getFileName()
                 )).collect(Collectors.toList());
 

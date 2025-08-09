@@ -11,16 +11,17 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
 
     AnimeShow findByTitle(String title);
 
+    //Check if download link already exists
     boolean existsByDownloadLink(String downloadLink);
 
     //All list without pagination
-    List<AnimeShow> findAllByOrderByReleasedDateDesc();
+    List<AnimeShow> findAllByOrderByCreatedAtDesc();
 
     //For pagination
-    Page<AnimeShow> findAllByOrderByReleasedDateDesc(Pageable pageable);
+    Page<AnimeShow> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     //For paginated search by title (partial match, case-insensitive)
-    Page<AnimeShow> findByTitleContainingIgnoreCaseOrderByReleasedDateDesc(String title, Pageable pageable);
+    Page<AnimeShow> findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(String title, Pageable pageable);
 
 
 }

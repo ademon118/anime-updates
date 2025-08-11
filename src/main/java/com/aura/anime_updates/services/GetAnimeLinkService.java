@@ -4,16 +4,21 @@ import com.aura.anime_updates.domain.AnimeShow;
 import com.aura.anime_updates.dto.AnimeDownloadInfo;
 import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
 import com.aura.anime_updates.repository.AnimeShowRepository;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -25,6 +30,7 @@ import java.util.stream.Collectors;
 @Service
 public class GetAnimeLinkService {
     private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
+    private static final String JIKAN_API_BASE = "https://api.jikan.moe/v4/anime?q=";
 
     private final AnimeShowRepository animeShowRepository;
     private final AnimePersistenceService animePersistenceService;
@@ -35,6 +41,8 @@ public class GetAnimeLinkService {
         this.animePersistenceService = animePersistenceService;
     }
 
+
+    //Fetches RSS data, queries Jikan API for images, and stores new anime
     public void fetchAndSaveNewAnimeShows() {
         try {
             URL feedSource = new URL(RSS_URL);
@@ -42,6 +50,8 @@ public class GetAnimeLinkService {
             SyndFeed feed = input.build(new XmlReader(feedSource));
 
             List<AnimeShow> animeShowToSave = new ArrayList<>();
+            RestTemplate restTemplate = new RestTemplate();
+
             for (SyndEntry entry : feed.getEntries()) {
                 String rawTitle = entry.getTitle();
                 String link = entry.getLink();
@@ -63,8 +73,13 @@ public class GetAnimeLinkService {
 
                 // Only add if new downloadLink not already in DB
                 if (!animeShowRepository.existsByDownloadLink(link)) {
-                    AnimeShow anime = new AnimeShow(cleanTitle,link,episode,releasedDate,filename);
+                    String imageUrl = fetchImageFromJikan(cleanTitle,restTemplate);
+
+                    AnimeShow anime = new AnimeShow(cleanTitle,link,episode,releasedDate,filename,imageUrl);
+                    anime.setImageUrl(imageUrl);
                     animeShowToSave.add(anime);
+
+                    Thread.sleep(5000);
                 }
             }
             if (!animeShowToSave.isEmpty()) {
@@ -75,11 +90,60 @@ public class GetAnimeLinkService {
         }
     }
 
+
+    //Backfills missing images for existing records.
+    public void backfillMissingImages(){
+        try {
+            List<AnimeShow> showsWithoutImages = animeShowRepository.findByImageUrlIsNull();
+            RestTemplate restTemplate = new RestTemplate();
+
+            for (AnimeShow show : showsWithoutImages){
+                String imageUrl = fetchImageFromJikan(show.getTitle(),restTemplate);
+                show.setImageUrl(imageUrl);
+                animeShowRepository.save(show);
+
+                Thread.sleep(5000);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    // Helper method to query Jikan API for the large_image_url
+    private String fetchImageFromJikan(String title,RestTemplate restTemplate){
+        try{
+             String encodeTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
+             String apiUrl = JIKAN_API_BASE + encodeTitle;
+
+             String jsonResponse = restTemplate.getForObject(apiUrl,String.class);
+            JSONObject obj = new JSONObject(jsonResponse);
+
+            if(obj.has("data") && obj.getJSONArray("data").length() > 0){
+                return obj.getJSONArray("data")
+                        .getJSONObject(0)
+                        .getJSONObject("images")
+                        .getJSONObject("jpg")
+                        .getString("large_image_url");
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return  null;
+    }
+
     // Called by API to fetch all saved anime from DB as DTO list
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
         return animeShowRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getCreatedAt(),a.getFileName()))
+                .map(a -> new AnimeDownloadInfo(
+                        a.getId(),
+                        a.getTitle(),
+                        a.getDownloadLink(),
+                        a.getEpisode(),
+                        a.getCreatedAt(),
+                        a.getFileName(),
+                        a.getImageUrl()))
                 .collect(Collectors.toList());
     }
 
@@ -111,7 +175,8 @@ public class GetAnimeLinkService {
                         a.getDownloadLink(),
                         a.getEpisode(),
                         a.getCreatedAt(),
-                        a.getFileName()
+                        a.getFileName(),
+                        a.getImageUrl()
                 )).collect(Collectors.toList());
 
         return new AnimeDownloadInfoPage(content, animePage.getTotalElements(),animePage.getTotalPages());

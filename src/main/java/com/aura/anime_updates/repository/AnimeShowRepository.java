@@ -23,5 +23,5 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
     //For paginated search by title (partial match, case-insensitive)
     Page<AnimeShow> findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(String title, Pageable pageable);
 
-
+    List<AnimeShow> findByImageUrlIsNull();
 }

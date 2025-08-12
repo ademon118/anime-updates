@@ -19,7 +19,7 @@ public class AnimeSchedular {
     }
 
     // Backfill missing images every 30 minutes
-    @Scheduled(fixedRate = 5 * 1000)
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     public void backfillMissingImagesEveryThirtyMinutes(){
         getAnimeLinkService.backfillMissingImages();
     }

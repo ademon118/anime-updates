@@ -18,5 +18,10 @@ public class AnimeSchedular {
         getAnimeLinkService.fetchAndSaveNewAnimeShows();
     }
 
+    // Backfill missing images every 30 minutes
+    @Scheduled(fixedRate = 5 * 1000)
+    public void backfillMissingImagesEveryThirtyMinutes(){
+        getAnimeLinkService.backfillMissingImages();
+    }
 
 }

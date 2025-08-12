@@ -96,13 +96,21 @@ public class GetAnimeLinkService {
         try {
             List<AnimeShow> showsWithoutImages = animeShowRepository.findByImageUrlIsNull();
             RestTemplate restTemplate = new RestTemplate();
+            List<AnimeShow> updatedShows = new ArrayList<>();
 
             for (AnimeShow show : showsWithoutImages){
                 String imageUrl = fetchImageFromJikan(show.getTitle(),restTemplate);
-                show.setImageUrl(imageUrl);
-                animeShowRepository.save(show);
+                if (imageUrl != null) {
+                    show.setImageUrl(imageUrl);
+                    updatedShows.add(show);
+                }
 
                 Thread.sleep(5000);
+            }
+            
+            // Batch save all updated shows at once
+            if (!updatedShows.isEmpty()) {
+                animeShowRepository.saveAll(updatedShows);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -125,6 +133,7 @@ public class GetAnimeLinkService {
                         .getJSONObject("jpg")
                         .getString("large_image_url");
             }
+            Thread.sleep(5000);
 
         }catch (Exception e){
             e.printStackTrace();

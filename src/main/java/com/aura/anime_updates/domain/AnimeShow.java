@@ -31,6 +31,9 @@ public class AnimeShow {
     @Column()
     private String fileName;
 
+    @Column()
+    private String imageUrl;
+
     @CreatedDate
     @Column(name = "created_at",updatable = false)
     private LocalDateTime createdAt;
@@ -43,12 +46,13 @@ public class AnimeShow {
 
     }
 
-    public AnimeShow(String title,String downloadLink,String episode,LocalDateTime releasedDate,String fileName){
+    public AnimeShow(String title,String downloadLink,String episode,LocalDateTime releasedDate,String fileName,String imageUrl){
         this.title = title;
         this.downloadLink = downloadLink;
         this.episode = episode;
         this.releasedDate = releasedDate;
         this.fileName = fileName;
+        this.imageUrl = imageUrl;
     }
 
     public Long getId(){
@@ -114,6 +118,14 @@ public class AnimeShow {
 
     public void setFileName(String fileName){
         this.fileName = fileName;
+    }
+
+    public String getImageUrl(){
+        return this.imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl){
+        this.imageUrl = imageUrl;
     }
 
 

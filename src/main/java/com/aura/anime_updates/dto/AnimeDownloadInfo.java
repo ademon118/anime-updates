@@ -9,14 +9,16 @@ public class AnimeDownloadInfo {
     private  String episode;
     private LocalDateTime releasedDate;
     private String fileName;
+    private String imageUrl;
 
-    public AnimeDownloadInfo(Long id, String title, String downloadlink,String episode, LocalDateTime releasedDate,String fileName){
+    public AnimeDownloadInfo(Long id, String title, String downloadlink,String episode, LocalDateTime releasedDate,String fileName,String imageUrl){
         this.id = id;
         this.title = title;
         this.downloadlink = downloadlink;
         this.episode = episode;
         this.releasedDate = releasedDate;
         this.fileName = fileName;
+        this.imageUrl = imageUrl;
     }
 
     public Long getId() {
@@ -40,6 +42,12 @@ public class AnimeDownloadInfo {
     }
 
     public String getFileName(){return fileName;}
+
+
+    public String getImageUrl(){
+        return imageUrl;
+    }
+
 
 
 }

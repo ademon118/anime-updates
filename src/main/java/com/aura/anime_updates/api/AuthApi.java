@@ -23,7 +23,7 @@ public class AuthApi {
     private AuthService authService;
 
     @PostMapping("/register")
-    public String register(@RequestBody AuthRequest request){
+    public AuthResponse register(@RequestBody AuthRequest request){
        return authService.register(request);
     }
 

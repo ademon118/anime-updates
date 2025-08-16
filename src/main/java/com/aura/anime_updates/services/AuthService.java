@@ -28,15 +28,15 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public String register(AuthRequest request){
+    public AuthResponse register(AuthRequest request){
         if(userRepository.findByUserName(request.getUserName()).isPresent()){
-            return "UserName already exists";
+            return new AuthResponse(false, "Username already exists");
         }
         User user = new User();
         user.setUserName(request.getUserName());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
-        return "User registered successfully";
+        return new AuthResponse(true, "User registered successfully");
     }
 
     public AuthResponse login(AuthRequest request){
@@ -45,12 +45,12 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(request.getUserName(),request.getPassword())
             );
             String token = jwtUtil.generateToken(request.getUserName());
-            return new AuthResponse(token);
+            return new AuthResponse(true, "Login successful", token);
         }catch (AuthenticationException e){
-            throw new RuntimeException("Invalid username or password");
+            return new AuthResponse(false, "Invalid username or password");
         } catch (Exception e) {
             System.out.println(e);
-            return null;
+            return new AuthResponse(false, "An error occurred during login");
         }
     }
 }

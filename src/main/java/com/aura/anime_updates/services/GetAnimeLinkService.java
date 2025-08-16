@@ -145,14 +145,7 @@ public class GetAnimeLinkService {
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
         return animeShowRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(
-                        a.getId(),
-                        a.getTitle(),
-                        a.getDownloadLink(),
-                        a.getEpisode(),
-                        a.getCreatedAt(),
-                        a.getFileName(),
-                        a.getImageUrl()))
+                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getCreatedAt(),a.getFileName(),a.getImageUrl()))
                 .collect(Collectors.toList());
     }
 

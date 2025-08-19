@@ -1,10 +1,11 @@
 package com.aura.anime_updates.services;
 
 import com.aura.anime_updates.domain.AnimeShow;
+import com.aura.anime_updates.domain.Release;
 import com.aura.anime_updates.dto.AnimeDownloadInfo;
 import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
 import com.aura.anime_updates.repository.AnimeShowRepository;
-import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.aura.anime_updates.repository.ReleaseRepository;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
@@ -21,8 +22,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,23 +33,28 @@ public class GetAnimeLinkService {
     private static final String JIKAN_API_BASE = "https://api.jikan.moe/v4/anime?q=";
 
     private final AnimeShowRepository animeShowRepository;
+    private final ReleaseRepository releaseRepository;
     private final AnimePersistenceService animePersistenceService;
 
     public GetAnimeLinkService(final AnimeShowRepository animeShowRepository,
+                               final ReleaseRepository releaseRepository,
                                AnimePersistenceService animePersistenceService){
         this.animeShowRepository = animeShowRepository;
+        this.releaseRepository = releaseRepository;
         this.animePersistenceService = animePersistenceService;
     }
 
 
-    //Fetches RSS data, queries Jikan API for images, and stores new anime
+    //Fetches RSS data, queries Jikan API for images, and stores new anime and releases
+    @org.springframework.transaction.annotation.Transactional
     public void fetchAndSaveNewAnimeShows() {
         try {
             URL feedSource = new URL(RSS_URL);
             SyndFeedInput input = new SyndFeedInput();
             SyndFeed feed = input.build(new XmlReader(feedSource));
 
-            List<AnimeShow> animeShowToSave = new ArrayList<>();
+            Map<String, AnimeShow> titleToShow = new HashMap<>();
+            List<Release> releasesToSave = new ArrayList<>();
             RestTemplate restTemplate = new RestTemplate();
 
             for (SyndEntry entry : feed.getEntries()) {
@@ -58,32 +63,41 @@ public class GetAnimeLinkService {
                 String category = entry.getCategories().isEmpty() ? null : entry.getCategories().get(0).getName();
                 LocalDateTime releasedDate = entry.getPublishedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-                //To get only episode number from title
                 String episode = extractEpisodeNumber(rawTitle);
                 String filename = rawTitle.replaceAll("\\.mkv$", "");
-
 
                 if( episode == null ||  category == null || !link.contains("nyaa.si")){
                     continue;
                 }
 
-                //Title from category removing -1080
                 String cleanTitle = category.replaceAll("\\s*-\\s*1080", "").trim();
 
-
-                // Only add if new downloadLink not already in DB
-                if (!animeShowRepository.existsByDownloadLink(link)) {
-                    String imageUrl = fetchImageFromJikan(cleanTitle,restTemplate);
-
-                    AnimeShow anime = new AnimeShow(cleanTitle,link,episode,releasedDate,filename,imageUrl);
-                    anime.setImageUrl(imageUrl);
-                    animeShowToSave.add(anime);
-
-                    Thread.sleep(5000);
+                if (releaseRepository.existsByDownloadLink(link)) {
+                    continue;
                 }
+
+                AnimeShow show = titleToShow.computeIfAbsent(cleanTitle, t -> {
+                    AnimeShow existing = animeShowRepository.findByTitle(t);
+                    if (existing != null) {
+                        return existing;
+                    }
+                    String imageUrl = fetchImageFromJikan(t, restTemplate);
+                    return new AnimeShow(t, imageUrl);
+                });
+
+                Release release = new Release(link, episode, releasedDate, filename, show);
+                releasesToSave.add(release);
+
+                Thread.sleep(5000);
             }
-            if (!animeShowToSave.isEmpty()) {
-                animePersistenceService.saveAll(animeShowToSave);
+
+            if (!titleToShow.isEmpty()) {
+                animePersistenceService.saveAllShows(new ArrayList<>(titleToShow.values()));
+                System.out.println("Saved shows: " + titleToShow.size());
+            }
+            if (!releasesToSave.isEmpty()) {
+                animePersistenceService.saveAllReleases(releasesToSave);
+                System.out.println("Saved releases: " + releasesToSave.size());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -108,7 +122,6 @@ public class GetAnimeLinkService {
                 Thread.sleep(5000);
             }
             
-            // Batch save all updated shows at once
             if (!updatedShows.isEmpty()) {
                 animeShowRepository.saveAll(updatedShows);
             }
@@ -117,7 +130,6 @@ public class GetAnimeLinkService {
         }
     }
 
-    // Helper method to query Jikan API for the large_image_url
     private String fetchImageFromJikan(String title,RestTemplate restTemplate){
         try{
              String encodeTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
@@ -141,16 +153,22 @@ public class GetAnimeLinkService {
         return  null;
     }
 
-    // Called by API to fetch all saved anime from DB as DTO list
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
         return animeShowRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(a -> new AnimeDownloadInfo(a.getId(), a.getTitle(), a.getDownloadLink(),a.getEpisode(),a.getCreatedAt(),a.getFileName(),a.getImageUrl()))
+                .flatMap(show -> show.getReleases().stream().map(r -> new AnimeDownloadInfo(
+                        show.getId(),
+                        show.getTitle(),
+                        r.getDownloadLink(),
+                        r.getEpisode(),
+                        r.getReleasedDate(),
+                        r.getFileName(),
+                        show.getImageUrl()
+                )))
+                .sorted((a,b) -> b.getReleasedDate().compareTo(a.getReleasedDate()))
                 .collect(Collectors.toList());
     }
 
-
-    //Method for title trim
     private String extractEpisodeNumber(String title){
         Pattern pattern = Pattern.compile("\\-\\s*(\\d{2})\\s*\\(");
         Matcher matcher = pattern.matcher(title);
@@ -171,18 +189,21 @@ public class GetAnimeLinkService {
 
     private AnimeDownloadInfoPage toDtoPage(Page<AnimeShow> animePage){
         List<AnimeDownloadInfo> content = animePage.getContent().stream()
-                .map(a -> new AnimeDownloadInfo(
-                        a.getId(),
-                        a.getTitle(),
-                        a.getDownloadLink(),
-                        a.getEpisode(),
-                        a.getCreatedAt(),
-                        a.getFileName(),
-                        a.getImageUrl()
-                )).collect(Collectors.toList());
+                .flatMap(show -> show.getReleases().stream().map(r -> new AnimeDownloadInfo(
+                        show.getId(),
+                        show.getTitle(),
+                        r.getDownloadLink(),
+                        r.getEpisode(),
+                        r.getReleasedDate(),
+                        r.getFileName(),
+                        show.getImageUrl()
+                )))
+                .sorted((a,b) -> b.getReleasedDate().compareTo(a.getReleasedDate()))
+                .collect(Collectors.toList());
 
         return new AnimeDownloadInfoPage(content, animePage.getTotalElements(),animePage.getTotalPages());
     }
 
 }
 
+ 

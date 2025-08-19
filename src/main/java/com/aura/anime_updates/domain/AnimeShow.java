@@ -6,6 +6,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "anime_shows")
@@ -19,18 +21,6 @@ public class AnimeShow {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, unique = true)
-    private String downloadLink;
-
-    @Column()
-    private String episode;
-
-    @Column()
-    private LocalDateTime releasedDate;
-
-    @Column()
-    private String fileName;
-
     @Column()
     private String imageUrl;
 
@@ -42,16 +32,15 @@ public class AnimeShow {
     @Column(name = "updated_time")
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "animeShow", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<Release> releases = new ArrayList<>();
+
     public AnimeShow(){
 
     }
 
-    public AnimeShow(String title,String downloadLink,String episode,LocalDateTime releasedDate,String fileName,String imageUrl){
+    public AnimeShow(String title,String imageUrl){
         this.title = title;
-        this.downloadLink = downloadLink;
-        this.episode = episode;
-        this.releasedDate = releasedDate;
-        this.fileName = fileName;
         this.imageUrl = imageUrl;
     }
 
@@ -71,31 +60,6 @@ public class AnimeShow {
         this.title = title;
     }
 
-    public String getDownloadLink(){
-        return this.downloadLink;
-    }
-
-    public void setDownloadLink(String downloadLink){
-        this.downloadLink = downloadLink;
-    }
-
-    public String getEpisode(){
-        return this.episode;
-    }
-
-    public void setEpisode(String episode){
-        this.episode = episode;
-    }
-
-    public LocalDateTime getReleasedDate(){
-        return this.releasedDate;
-    }
-
-    public void setReleasedDate(LocalDateTime releasedDate){
-        this.releasedDate = releasedDate;
-    }
-
-
     public  LocalDateTime getCreatedAt(){
         return this.createdAt;
     }
@@ -112,20 +76,20 @@ public class AnimeShow {
         this.updatedAt = updatedAt;
     }
 
-    public String getFileName(){
-        return this.fileName;
-    }
-
-    public void setFileName(String fileName){
-        this.fileName = fileName;
-    }
-
     public String getImageUrl(){
         return this.imageUrl;
     }
 
     public void setImageUrl(String imageUrl){
         this.imageUrl = imageUrl;
+    }
+
+    public List<Release> getReleases() {
+        return releases;
+    }
+
+    public void setReleases(List<Release> releases) {
+        this.releases = releases;
     }
 
 

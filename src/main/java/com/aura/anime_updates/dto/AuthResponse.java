@@ -29,5 +29,31 @@ public class AuthResponse {
         this.token = token;
     }
 
+    // Explicit getters to ensure compatibility even without Lombok processing
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public boolean getSuccess() {
+        return success;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+
 
 }

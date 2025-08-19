@@ -45,4 +45,14 @@ public class AnimeLinksAPI {
             return ResponseEntity.badRequest().body(ApiResponse.error("Failed to retrieve all anime downloads: " + e.getMessage(), 400));
         }
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<String>> refreshNow() {
+        try {
+            getAnimeLinkService.fetchAndSaveNewAnimeShows();
+            return ResponseEntity.ok(ApiResponse.success("Fetch and save triggered"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to refresh: " + e.getMessage(), 400));
+        }
+    }
 }

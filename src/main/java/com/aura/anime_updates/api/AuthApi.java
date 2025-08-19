@@ -1,18 +1,11 @@
 package com.aura.anime_updates.api;
 
-import com.aura.anime_updates.domain.User;
 import com.aura.anime_updates.dto.ApiResponse;
 import com.aura.anime_updates.dto.AuthRequest;
 import com.aura.anime_updates.dto.AuthResponse;
-import com.aura.anime_updates.repository.UserRepository;
-import com.aura.anime_updates.security.JwtUtil;
 import com.aura.anime_updates.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +18,7 @@ public class AuthApi {
     private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> register(@RequestBody AuthRequest request){
+    public ResponseEntity<ApiResponse<?>> register(@RequestBody AuthRequest request){
         try {
             AuthResponse authResponse = authService.register(request);
             if (authResponse.isSuccess()) {
@@ -39,7 +32,7 @@ public class AuthApi {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@RequestBody AuthRequest request){
+    public ResponseEntity<ApiResponse<?>> login(@RequestBody AuthRequest request){
         try {
             AuthResponse authResponse = authService.login(request);
             if (authResponse.isSuccess()) {

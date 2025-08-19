@@ -11,9 +11,6 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
 
     AnimeShow findByTitle(String title);
 
-    //Check if download link already exists
-    boolean existsByDownloadLink(String downloadLink);
-
     //All list without pagination
     List<AnimeShow> findAllByOrderByCreatedAtDesc();
 

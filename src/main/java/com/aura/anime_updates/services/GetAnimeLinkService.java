@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 
@@ -46,7 +47,7 @@ public class GetAnimeLinkService {
 
 
     //Fetches RSS data, queries Jikan API for images, and stores new anime and releases
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void fetchAndSaveNewAnimeShows() {
         try {
             URL feedSource = new URL(RSS_URL);

@@ -21,14 +21,15 @@ public class AnimeLinksAPI {
     public ResponseEntity<ApiResponse<AnimeDownloadInfoPage>> getDownloadLinks(
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long userId
     ) {
         try {
             AnimeDownloadInfoPage result;
             if (title != null && !title.isBlank()) {
-                result = getAnimeLinkService.searchByTitle(title, page, size);
+                result = getAnimeLinkService.searchByTitle(title, page, size, userId);
             } else {
-                result = getAnimeLinkService.getAllAnimeDownloadInfoPaginated(page, size);
+                result = getAnimeLinkService.getAllAnimeDownloadInfoPaginated(page, size, userId);
             }
             return ResponseEntity.ok(ApiResponse.success(result, "Anime downloads retrieved successfully"));
         } catch (Exception e) {
@@ -37,22 +38,15 @@ public class AnimeLinksAPI {
     }
 
     @GetMapping("/downloads/all")
-    public ResponseEntity<ApiResponse<List<AnimeDownloadInfo>>> getAllDownloadLinks() {
+    public ResponseEntity<ApiResponse<List<AnimeDownloadInfo>>> getAllDownloadLinks(
+            @RequestParam(required = false) Long userId
+    ) {
         try {
-            List<AnimeDownloadInfo> result = getAnimeLinkService.getAllAnimeDownloadInfo();
+            List<AnimeDownloadInfo> result = getAnimeLinkService.getAllAnimeDownloadInfo(userId);
             return ResponseEntity.ok(ApiResponse.success(result, "All anime downloads retrieved successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Failed to retrieve all anime downloads: " + e.getMessage(), 400));
         }
     }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<String>> refreshNow() {
-        try {
-            getAnimeLinkService.fetchAndSaveNewAnimeShows();
-            return ResponseEntity.ok(ApiResponse.success("Fetch and save triggered"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to refresh: " + e.getMessage(), 400));
-        }
-    }
 }

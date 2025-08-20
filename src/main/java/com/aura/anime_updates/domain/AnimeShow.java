@@ -1,5 +1,6 @@
 package com.aura.anime_updates.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
@@ -18,7 +19,7 @@ public class AnimeShow {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String title;
 
     @Column()
@@ -32,6 +33,7 @@ public class AnimeShow {
     @Column(name = "updated_time")
     private LocalDateTime updatedAt;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "animeShow", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Release> releases = new ArrayList<>();
 
@@ -91,12 +93,6 @@ public class AnimeShow {
     public void setReleases(List<Release> releases) {
         this.releases = releases;
     }
-
-
-
-
-
-
 
 
 }

@@ -2,10 +2,12 @@ package com.aura.anime_updates.services;
 
 import com.aura.anime_updates.domain.AnimeShow;
 import com.aura.anime_updates.domain.Release;
+import com.aura.anime_updates.domain.User;
 import com.aura.anime_updates.dto.AnimeDownloadInfo;
 import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
 import com.aura.anime_updates.repository.AnimeShowRepository;
 import com.aura.anime_updates.repository.ReleaseRepository;
+import com.aura.anime_updates.repository.UserRepository;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
@@ -14,6 +16,7 @@ import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 
@@ -35,18 +38,21 @@ public class GetAnimeLinkService {
     private final AnimeShowRepository animeShowRepository;
     private final ReleaseRepository releaseRepository;
     private final AnimePersistenceService animePersistenceService;
+    private final UserRepository userRepository;
 
     public GetAnimeLinkService(final AnimeShowRepository animeShowRepository,
                                final ReleaseRepository releaseRepository,
-                               AnimePersistenceService animePersistenceService){
+                               AnimePersistenceService animePersistenceService,
+                               UserRepository userRepository){
         this.animeShowRepository = animeShowRepository;
         this.releaseRepository = releaseRepository;
         this.animePersistenceService = animePersistenceService;
+        this.userRepository = userRepository;
     }
 
 
     //Fetches RSS data, queries Jikan API for images, and stores new anime and releases
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void fetchAndSaveNewAnimeShows() {
         try {
             URL feedSource = new URL(RSS_URL);
@@ -154,16 +160,40 @@ public class GetAnimeLinkService {
     }
 
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo() {
+        return getAllAnimeDownloadInfo(null);
+    }
+
+    public List<AnimeDownloadInfo> getAllAnimeDownloadInfo(Long userId) {
+        Set<Long> trackedShowIds = new HashSet<>();
+        
+        if (userId != null) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user != null) {
+                    trackedShowIds.addAll(user.getTrackedShows().stream()
+                            .map(AnimeShow::getId)
+                            .collect(Collectors.toSet()));
+                }
+            } catch (Exception e) {
+                // Log error but continue without tracking info
+                System.err.println("Error getting tracking info for user " + userId + ": " + e.getMessage());
+            }
+        }
+
+        final Set<Long> finalTrackedShowIds = trackedShowIds;
+
         return animeShowRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .flatMap(show -> show.getReleases().stream().map(r -> new AnimeDownloadInfo(
+                        r.getId(),
                         show.getId(),
                         show.getTitle(),
                         r.getDownloadLink(),
                         r.getEpisode(),
                         r.getReleasedDate(),
                         r.getFileName(),
-                        show.getImageUrl()
+                        show.getImageUrl(),
+                        finalTrackedShowIds.contains(show.getId())
                 )))
                 .sorted((a,b) -> b.getReleasedDate().compareTo(a.getReleasedDate()))
                 .collect(Collectors.toList());
@@ -175,33 +205,61 @@ public class GetAnimeLinkService {
         return matcher.find()?matcher.group(1) : null;
     }
 
-    public AnimeDownloadInfoPage getAllAnimeDownloadInfoPaginated(int page,int size){
-        PageRequest pageable = PageRequest.of(page,size);
+    public AnimeDownloadInfoPage getAllAnimeDownloadInfoPaginated(int page, int size) {
+        return getAllAnimeDownloadInfoPaginated(page, size, null);
+    }
+
+    public AnimeDownloadInfoPage getAllAnimeDownloadInfoPaginated(int page, int size, Long userId) {
+        PageRequest pageable = PageRequest.of(page, size);
         Page<AnimeShow> animePage = animeShowRepository.findAllByOrderByCreatedAtDesc(pageable);
-        return toDtoPage(animePage);
+        return toDtoPage(animePage, userId);
     }
 
-    public AnimeDownloadInfoPage searchByTitle(String title,int page, int size){
-        PageRequest pageable = PageRequest.of(page,size);
-        Page<AnimeShow> animePage = animeShowRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(title,pageable);
-        return toDtoPage(animePage);
+    public AnimeDownloadInfoPage searchByTitle(String title, int page, int size) {
+        return searchByTitle(title, page, size, null);
     }
 
-    private AnimeDownloadInfoPage toDtoPage(Page<AnimeShow> animePage){
+    public AnimeDownloadInfoPage searchByTitle(String title, int page, int size, Long userId) {
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<AnimeShow> animePage = animeShowRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(title, pageable);
+        return toDtoPage(animePage, userId);
+    }
+
+    private AnimeDownloadInfoPage toDtoPage(Page<AnimeShow> animePage, Long userId) {
+        Set<Long> trackedShowIds = new HashSet<>();
+        
+        if (userId != null) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user != null) {
+                    trackedShowIds.addAll(user.getTrackedShows().stream()
+                            .map(AnimeShow::getId)
+                            .collect(Collectors.toSet()));
+                }
+            } catch (Exception e) {
+                // Log error but continue without tracking info
+                System.err.println("Error getting tracking info for user " + userId + ": " + e.getMessage());
+            }
+        }
+
+        final Set<Long> finalTrackedShowIds = trackedShowIds;
+
         List<AnimeDownloadInfo> content = animePage.getContent().stream()
                 .flatMap(show -> show.getReleases().stream().map(r -> new AnimeDownloadInfo(
+                        r.getId(),
                         show.getId(),
                         show.getTitle(),
                         r.getDownloadLink(),
                         r.getEpisode(),
                         r.getReleasedDate(),
                         r.getFileName(),
-                        show.getImageUrl()
+                        show.getImageUrl(),
+                        finalTrackedShowIds.contains(show.getId())
                 )))
                 .sorted((a,b) -> b.getReleasedDate().compareTo(a.getReleasedDate()))
                 .collect(Collectors.toList());
 
-        return new AnimeDownloadInfoPage(content, animePage.getTotalElements(),animePage.getTotalPages());
+        return new AnimeDownloadInfoPage(content, animePage.getTotalElements(), animePage.getTotalPages());
     }
 
 }

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtUtil {
@@ -20,9 +22,12 @@ public class JwtUtil {
 
     private final long EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000; //3day
 
-    public String generateToken(String userId){
+    public String generateToken(String userId, String username){
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", username);
         return Jwts.builder()
                 .subject(userId)
+                .claims(claims)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))

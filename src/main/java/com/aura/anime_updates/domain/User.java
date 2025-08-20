@@ -1,9 +1,12 @@
 package com.aura.anime_updates.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import com.aura.anime_updates.dto.TrackedShowDto;
 
 @Entity
 public class User {
@@ -13,6 +16,7 @@ public class User {
     private String userName;
     private String password;
 
+    @JsonManagedReference
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_tracked_shows",
@@ -69,5 +73,18 @@ public class User {
 
     public void untrackShow(AnimeShow show) {
         this.trackedShows.remove(show);
+    }
+
+    public Set<TrackedShowDto> getTrackedShowsAsDtos() {
+        return this.trackedShows.stream()
+                .map(show -> new TrackedShowDto(
+                        show.getId(),
+                        show.getTitle(),
+                        show.getImageUrl(),
+                        show.getCreatedAt(),
+                        show.getUpdatedAt()
+                ))
+                .sorted((a,b)->b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .collect(Collectors.toSet());
     }
 }

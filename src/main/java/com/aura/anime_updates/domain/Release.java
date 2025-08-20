@@ -1,11 +1,13 @@
 package com.aura.anime_updates.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import com.aura.anime_updates.dto.TrackedReleaseDto;
 
 @Entity
 @Table(name = "releases")
@@ -36,6 +38,7 @@ public class Release {
     @Column(name = "updated_time")
     private LocalDateTime updatedAt;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "animeShowsId", nullable = false)
     private AnimeShow animeShow;
@@ -112,6 +115,18 @@ public class Release {
 
     public void setAnimeShow(AnimeShow animeShow) {
         this.animeShow = animeShow;
+    }
+
+    public TrackedReleaseDto toTrackedReleaseDto() {
+        return new TrackedReleaseDto(
+                this.id,
+                this.downloadLink,
+                this.episode,
+                this.releasedDate,
+                this.fileName,
+                this.createdAt,
+                this.updatedAt
+        );
     }
 }
 

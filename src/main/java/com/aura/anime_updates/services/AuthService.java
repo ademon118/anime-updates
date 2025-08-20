@@ -48,7 +48,7 @@ public class AuthService {
             User user = userRepository.findByUserName(authentication.getName())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid Credentials"));
 
-            String token = jwtUtil.generateToken(String.valueOf(user.getId()));
+            String token = jwtUtil.generateToken(user.getId().toString(), user.getUserName());
             return new AuthResponse(true, "Login successful", token);
         }catch (AuthenticationException e){
             return new AuthResponse(false, "Invalid username or password");

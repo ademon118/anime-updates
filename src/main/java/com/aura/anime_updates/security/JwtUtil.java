@@ -20,16 +20,16 @@ public class JwtUtil {
 
     private final long EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000; //3day
 
-    public String generateToken(String userName){
+    public String generateToken(String userId){
         return Jwts.builder()
-                .subject(userName)
+                .subject(userId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
                 .compact();
     }
 
-    public String extractuserName(String token){
+    public String extractUserId(String token){
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()

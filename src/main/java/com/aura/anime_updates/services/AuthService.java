@@ -44,7 +44,11 @@ public class AuthService {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUserName(),request.getPassword())
             );
-            String token = jwtUtil.generateToken(request.getUserName());
+
+            User user = userRepository.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid Credentials"));
+
+            String token = jwtUtil.generateToken(String.valueOf(user.getId()));
             return new AuthResponse(true, "Login successful", token);
         }catch (AuthenticationException e){
             return new AuthResponse(false, "Invalid username or password");

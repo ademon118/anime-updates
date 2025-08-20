@@ -83,6 +83,8 @@ public class TrackingService {
         logger.info("Getting tracked releases for user {} with pagination page={},size={}", userId,pageable.getPageNumber(),pageable.getPageSize());
         User user = userRepository.findById(userId).orElseThrow(()->new IllegalArgumentException("User not found"));
 
+        //WHAT THE FUCK IS THIS SHIT?
+        //TODO: FIX ASAP. MY SERVER ONLY HAS 1GB RUN
         List<TrackedReleaseDto> allReleases = user.getTrackedShows().stream()
                 .flatMap(show->show.getReleases().stream())
                 .map(Release::toTrackedReleaseDto)

@@ -1,5 +1,6 @@
 package com.aura.anime_updates.services;
 
+import com.aura.anime_updates.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.domain.AnimeShow;
 import com.aura.anime_updates.domain.Release;
 import com.aura.anime_updates.domain.User;
@@ -16,6 +17,8 @@ import com.rometools.rome.io.XmlReader;
 import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -274,6 +277,11 @@ public class GetAnimeLinkService {
                 .collect(Collectors.toList());
 
         return new AnimeDownloadInfoPage(content, animePage.getTotalElements(), animePage.getTotalPages());
+    }
+
+    public Page<ReleaseInfoResponse> getAllReleaseInfo(Integer limit, Integer offset){
+        Pageable pageable = PageRequest.of(offset / limit, limit);
+        return releaseRepository.getReleaseInfo(pageable);
     }
 
 }

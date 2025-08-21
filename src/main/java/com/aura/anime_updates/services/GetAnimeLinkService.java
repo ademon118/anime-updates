@@ -8,6 +8,7 @@ import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
 import com.aura.anime_updates.repository.AnimeShowRepository;
 import com.aura.anime_updates.repository.ReleaseRepository;
 import com.aura.anime_updates.repository.UserRepository;
+import com.google.firebase.messaging.Notification;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
@@ -39,15 +40,21 @@ public class GetAnimeLinkService {
     private final ReleaseRepository releaseRepository;
     private final AnimePersistenceService animePersistenceService;
     private final UserRepository userRepository;
+    private final FcmNotificationService notificationService;
+    private final TrackingService trackingService;
 
     public GetAnimeLinkService(final AnimeShowRepository animeShowRepository,
                                final ReleaseRepository releaseRepository,
                                AnimePersistenceService animePersistenceService,
-                               UserRepository userRepository){
+                               UserRepository userRepository,
+                               final FcmNotificationService notificationService,
+                               final TrackingService trackingService){
         this.animeShowRepository = animeShowRepository;
         this.releaseRepository = releaseRepository;
         this.animePersistenceService = animePersistenceService;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
+        this.trackingService = trackingService;
     }
 
 
@@ -94,6 +101,13 @@ public class GetAnimeLinkService {
                 Release release = new Release(link, episode, releasedDate, filename, show);
                 releasesToSave.add(release);
 
+                Notification notification = Notification.builder()
+                        .setTitle(show.getTitle())
+                        .setBody("Episode " + release.getEpisode() + " Released!")
+                        .setImage(show.getImageUrl())
+                        .build();
+
+                notificationService.sendNotificationToAllDevicesOfUsers(show.getTrackingUsers(), notification);
                 Thread.sleep(5000);
             }
 

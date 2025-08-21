@@ -2,13 +2,16 @@ package com.aura.anime_updates.domain;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "anime_shows")
@@ -36,6 +39,16 @@ public class AnimeShow {
     @JsonManagedReference
     @OneToMany(mappedBy = "animeShow", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Release> releases = new ArrayList<>();
+
+    @JsonManagedReference
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_tracked_shows",
+            joinColumns = @JoinColumn(name = "anime_show_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    @Getter
+    private List<User> trackingUsers = new ArrayList<>();
 
     public AnimeShow(){
 

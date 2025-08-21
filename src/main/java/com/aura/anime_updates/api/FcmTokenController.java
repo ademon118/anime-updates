@@ -6,6 +6,7 @@ import com.aura.anime_updates.dto.FcmTokenResponse;
 import com.aura.anime_updates.security.CustomUserDetails;
 import com.aura.anime_updates.services.FcmTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,7 @@ public class FcmTokenController {
     private FcmTokenService fcmTokenService;
 
     @PostMapping("/register")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<Object> registerToken(@RequestBody FcmTokenRequest request, Authentication auth) {
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         Long userId = userDetails.getId();

@@ -56,7 +56,7 @@ dependencies {
 	//Json Object
 	implementation 'org.json:json:20231013'
 
-
+    implementation 'com.google.firebase:firebase-admin:9.2.0' // latest version
 
 
 }

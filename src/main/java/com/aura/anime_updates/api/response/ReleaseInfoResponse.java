@@ -8,5 +8,4 @@ public interface ReleaseInfoResponse {
     String getEpisode();
     String getFileName();
     String getImgUrl();
-    Boolean getTracked();
 }

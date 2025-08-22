@@ -18,8 +18,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         r.download_link AS releaseDownloadLink,
         r.episode AS episode,
         r.file_name AS fileName,
-        ans.image_url AS imgUrl,
-        (0 = 1) As tracked
+        ans.image_url AS imgUrl
     FROM releases r
     JOIN anime_shows ans ON ans.id = r.anime_shows_id
     ORDER BY r.created_at DESC 

@@ -33,10 +33,10 @@ public class AnimeLinksAPI {
 
     @GetMapping("/get-releases")
     public ResponseEntity<Page<ReleaseInfoResponse>> getReleaseLinks(
-            @RequestParam(required = true)  Integer limit,
-            @RequestParam(required = true) Integer offset
+            @RequestParam(defaultValue = "0")  Integer page,
+            @RequestParam(defaultValue = "10") Integer size
     ){
-        Page<ReleaseInfoResponse> page = getAnimeLinkService.getAllReleaseInfo(limit, offset);
-        return ResponseEntity.ok(page);
+        Page<ReleaseInfoResponse> releasePage = getAnimeLinkService.getAllReleaseInfo(page, size);
+        return ResponseEntity.ok(releasePage);
     }
 }

@@ -279,8 +279,8 @@ public class GetAnimeLinkService {
         return new AnimeDownloadInfoPage(content, animePage.getTotalElements(), animePage.getTotalPages());
     }
 
-    public Page<ReleaseInfoResponse> getAllReleaseInfo(Integer limit, Integer offset){
-        Pageable pageable = PageRequest.of(offset / limit, limit);
+    public Page<ReleaseInfoResponse> getAllReleaseInfo(Integer page, Integer size){
+        Pageable pageable = PageRequest.of(page, size);
         return releaseRepository.getReleaseInfo(pageable);
     }
 

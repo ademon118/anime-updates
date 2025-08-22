@@ -42,4 +42,6 @@ public class FcmToken {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 }

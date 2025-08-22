@@ -1,4 +1,4 @@
-package com.aura.anime_updates.api.response;
+package com.aura.anime_updates.features.release.api.response;
 
 import java.time.LocalDateTime;
 

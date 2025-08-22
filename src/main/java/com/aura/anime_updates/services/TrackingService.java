@@ -1,7 +1,7 @@
 package com.aura.anime_updates.services;
 
 import com.aura.anime_updates.domain.AnimeShow;
-import com.aura.anime_updates.domain.Release;
+import com.aura.anime_updates.features.release.domain.entity.Release;
 import com.aura.anime_updates.domain.User;
 import com.aura.anime_updates.dto.TrackedReleaseDto;
 import com.aura.anime_updates.dto.TrackedShowDto;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

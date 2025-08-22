@@ -1,13 +1,13 @@
 package com.aura.anime_updates.services;
 
-import com.aura.anime_updates.api.response.ReleaseInfoResponse;
+import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.domain.AnimeShow;
-import com.aura.anime_updates.domain.Release;
+import com.aura.anime_updates.features.release.domain.entity.Release;
 import com.aura.anime_updates.domain.User;
 import com.aura.anime_updates.dto.AnimeDownloadInfo;
 import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
 import com.aura.anime_updates.repository.AnimeShowRepository;
-import com.aura.anime_updates.repository.ReleaseRepository;
+import com.aura.anime_updates.features.release.domain.repository.ReleaseRepository;
 import com.aura.anime_updates.repository.UserRepository;
 import com.google.firebase.messaging.Notification;
 import com.rometools.rome.feed.synd.SyndEntry;
@@ -17,12 +17,10 @@ import com.rometools.rome.io.XmlReader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.springframework.aot.hint.annotation.RegisterReflection;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -270,34 +268,6 @@ public class GetAnimeLinkService {
         return new AnimeDownloadInfoPage(content, animePage.getTotalElements(), animePage.getTotalPages());
     }
 
-    public Page<ReleaseInfoResponse> getAllReleaseInfo(Integer page, Integer size){
-        log.info("Fetching releases with page={} and size={}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-
-        try{
-            Page<ReleaseInfoResponse> releaseInfo =  releaseRepository.getReleaseInfo(pageable);
-            log.debug("Fetched {} releases out of total {}",
-                    releaseInfo.getNumberOfElements(), releaseInfo.getTotalElements());
-
-             return releaseInfo;
-        } catch (DataAccessException e){
-            throw new RuntimeException("Database error while fetching releases", e);
-        }
-    }
-
-    public ReleaseInfoResponse getReleaseInfoById(Long id) {
-        log.info("Fetching release info for id={}", id);
-
-        return releaseRepository.findReleaseById(id)
-                .map(release -> {
-                    log.debug("Found release: {}", release.getShowTitle());
-                    return release;
-                })
-                .orElseThrow(() -> {
-                    log.error("Release not found with id={}", id);
-                    return new RuntimeException("Could not find release with id: " + id);
-                });
-    }
 
 }
 

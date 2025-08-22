@@ -283,7 +283,20 @@ public class GetAnimeLinkService {
         } catch (DataAccessException e){
             throw new RuntimeException("Database error while fetching releases", e);
         }
+    }
 
+    public ReleaseInfoResponse getReleaseInfoById(Integer id) {
+        log.info("Fetching release info for id={}", id);
+
+        return releaseRepository.findReleaseById(id)
+                .map(release -> {
+                    log.debug("Found release: {}", release.getShowTitle());
+                    return release;
+                })
+                .orElseThrow(() -> {
+                    log.error("Release not found with id={}", id);
+                    return new RuntimeException("Could not find release with id: " + id);
+                });
     }
 
 }

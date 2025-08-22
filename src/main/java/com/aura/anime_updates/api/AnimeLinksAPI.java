@@ -39,4 +39,10 @@ public class AnimeLinksAPI {
         Page<ReleaseInfoResponse> releasePage = getAnimeLinkService.getAllReleaseInfo(page, size);
         return ResponseEntity.ok(releasePage);
     }
+
+    public ResponseEntity<ReleaseInfoResponse> getReleaseInfoById(
+            @RequestParam(required = true) Integer id
+    ){
+        return ResponseEntity.ok(getAnimeLinkService.getReleaseInfoById(id));
+    }
 }

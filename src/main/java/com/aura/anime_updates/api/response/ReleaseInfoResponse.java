@@ -1,13 +1,12 @@
 package com.aura.anime_updates.api.response;
 
-public record ReleaseInfoResponse(
-    Long releaseId,
-    Long animeShowId,
-    String showTitle,
-    String releaseDownloadLink,
-    String episode,
-    String fileName,
-    String imgUrl,
-    Boolean tracked
-) {
+public interface ReleaseInfoResponse {
+    Long getReleaseId();
+    Long getAnimeShowId();
+    String getShowTitle();
+    String getReleaseDownloadLink();
+    String getEpisode();
+    String getFileName();
+    String getImgUrl();
+    Boolean getTracked();
 }

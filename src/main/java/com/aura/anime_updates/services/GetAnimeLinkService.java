@@ -285,7 +285,7 @@ public class GetAnimeLinkService {
         }
     }
 
-    public ReleaseInfoResponse getReleaseInfoById(Integer id) {
+    public ReleaseInfoResponse getReleaseInfoById(Long id) {
         log.info("Fetching release info for id={}", id);
 
         return releaseRepository.findReleaseById(id)

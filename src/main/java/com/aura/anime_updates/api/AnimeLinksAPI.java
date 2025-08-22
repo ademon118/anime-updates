@@ -40,8 +40,9 @@ public class AnimeLinksAPI {
         return ResponseEntity.ok(releasePage);
     }
 
+    @GetMapping("/get-release/{id}")
     public ResponseEntity<ReleaseInfoResponse> getReleaseInfoById(
-            @RequestParam(required = true) Integer id
+            @PathVariable("id") Long id
     ){
         return ResponseEntity.ok(getAnimeLinkService.getReleaseInfoById(id));
     }

@@ -45,7 +45,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     WHERE r.id = :id
     """,
             nativeQuery = true)
-    Optional<ReleaseInfoResponse> findReleaseById(@Param("id") int id);
+    Optional<ReleaseInfoResponse> findReleaseById(@Param("id") Long id);
 
 }
 

@@ -1,5 +1,7 @@
 package com.aura.anime_updates.api.response;
 
+import java.time.LocalDateTime;
+
 public interface ReleaseInfoResponse {
     Long getReleaseId();
     Long getAnimeShowId();
@@ -8,4 +10,5 @@ public interface ReleaseInfoResponse {
     String getEpisode();
     String getFileName();
     String getImgUrl();
+    LocalDateTime getReleasedDate();
 }

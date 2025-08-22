@@ -1,10 +1,11 @@
 package com.aura.anime_updates.api;
 
+import com.aura.anime_updates.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.dto.AnimeDownloadInfo;
 import com.aura.anime_updates.dto.AnimeDownloadInfoPage;
-import com.aura.anime_updates.dto.ApiResponse;
 import com.aura.anime_updates.services.GetAnimeLinkService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,35 +19,24 @@ public class AnimeLinksAPI {
     private  GetAnimeLinkService getAnimeLinkService;
 
     @GetMapping("/downloads")
-    public ResponseEntity<ApiResponse<AnimeDownloadInfoPage>> getDownloadLinks(
+    public ResponseEntity<AnimeDownloadInfoPage> getDownloadLinks(
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Long userId
+            @RequestParam(defaultValue = "10") int size
     ) {
-        try {
-            AnimeDownloadInfoPage result;
-            if (title != null && !title.isBlank()) {
-                result = getAnimeLinkService.searchByTitle(title, page, size, userId);
-            } else {
-                result = getAnimeLinkService.getAllAnimeDownloadInfoPaginated(page, size, userId);
-            }
-            return ResponseEntity.ok(ApiResponse.success(result, "Anime downloads retrieved successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to retrieve anime downloads: " + e.getMessage(), 400));
+        if (title != null && !title.isBlank()) {
+            return ResponseEntity.ok(getAnimeLinkService.searchByTitle(title, page, size));
+        } else {
+            return ResponseEntity.ok(getAnimeLinkService.getAllAnimeDownloadInfoPaginated(page, size));
         }
     }
 
-    @GetMapping("/downloads/all")
-    public ResponseEntity<ApiResponse<List<AnimeDownloadInfo>>> getAllDownloadLinks(
-            @RequestParam(required = false) Long userId
-    ) {
-        try {
-            List<AnimeDownloadInfo> result = getAnimeLinkService.getAllAnimeDownloadInfo(userId);
-            return ResponseEntity.ok(ApiResponse.success(result, "All anime downloads retrieved successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to retrieve all anime downloads: " + e.getMessage(), 400));
-        }
+    @GetMapping("/get-releases")
+    public ResponseEntity<Page<ReleaseInfoResponse>> getReleaseLinks(
+            @RequestParam(defaultValue = "0")  Integer page,
+            @RequestParam(defaultValue = "10") Integer size
+    ){
+        Page<ReleaseInfoResponse> releasePage = getAnimeLinkService.getAllReleaseInfo(page, size);
+        return ResponseEntity.ok(releasePage);
     }
-
 }

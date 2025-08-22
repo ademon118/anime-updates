@@ -1,5 +1,6 @@
 package com.aura.anime_updates.services;
 
+import com.aura.anime_updates.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.domain.AnimeShow;
 import com.aura.anime_updates.domain.Release;
 import com.aura.anime_updates.domain.User;
@@ -13,9 +14,15 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.springframework.aot.hint.annotation.RegisterReflection;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -32,6 +39,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class GetAnimeLinkService {
     private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
     private static final String JIKAN_API_BASE = "https://api.jikan.moe/v4/anime?q=";
@@ -42,21 +51,6 @@ public class GetAnimeLinkService {
     private final UserRepository userRepository;
     private final FcmNotificationService notificationService;
     private final TrackingService trackingService;
-
-    public GetAnimeLinkService(final AnimeShowRepository animeShowRepository,
-                               final ReleaseRepository releaseRepository,
-                               AnimePersistenceService animePersistenceService,
-                               UserRepository userRepository,
-                               final FcmNotificationService notificationService,
-                               final TrackingService trackingService){
-        this.animeShowRepository = animeShowRepository;
-        this.releaseRepository = releaseRepository;
-        this.animePersistenceService = animePersistenceService;
-        this.userRepository = userRepository;
-        this.notificationService = notificationService;
-        this.trackingService = trackingService;
-    }
-
 
     //Fetches RSS data, queries Jikan API for images, and stores new anime and releases
     @Transactional
@@ -274,6 +268,22 @@ public class GetAnimeLinkService {
                 .collect(Collectors.toList());
 
         return new AnimeDownloadInfoPage(content, animePage.getTotalElements(), animePage.getTotalPages());
+    }
+
+    public Page<ReleaseInfoResponse> getAllReleaseInfo(Integer page, Integer size){
+        log.info("Fetching releases with page={} and size={}", page, size);
+        Pageable pageable = PageRequest.of(page, size);
+
+        try{
+            Page<ReleaseInfoResponse> releaseInfo =  releaseRepository.getReleaseInfo(pageable);
+            log.debug("Fetched {} releases out of total {}",
+                    releaseInfo.getNumberOfElements(), releaseInfo.getTotalElements());
+
+             return releaseInfo;
+        } catch (DataAccessException e){
+            throw new RuntimeException("Database error while fetching releases", e);
+        }
+
     }
 
 }

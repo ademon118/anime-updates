@@ -1,12 +1,12 @@
 package com.aura.anime_updates.services;
 
-import com.aura.anime_updates.domain.AnimeShow;
-import com.aura.anime_updates.domain.Release;
-import com.aura.anime_updates.domain.User;
+import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
+import com.aura.anime_updates.features.release.domain.entity.Release;
+import com.aura.anime_updates.features.user.domain.entity.User;
 import com.aura.anime_updates.dto.TrackedReleaseDto;
 import com.aura.anime_updates.dto.TrackedShowDto;
-import com.aura.anime_updates.repository.AnimeShowRepository;
-import com.aura.anime_updates.repository.UserRepository;
+import com.aura.anime_updates.features.animeShow.domain.repository.AnimeShowRepository;
+import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

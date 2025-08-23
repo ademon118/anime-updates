@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -69,9 +70,8 @@ public class TrackingApi {
     public ResponseEntity<ApiResponse<Page<TrackedReleaseDto>>> getTrackedReleases(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            Authentication auth
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         Long userId = userDetails.getId();
         Pageable pageable = PageRequest.of(page,size);
         Page<TrackedReleaseDto> releases = trackingService.getTrackedReleases(userId,pageable);

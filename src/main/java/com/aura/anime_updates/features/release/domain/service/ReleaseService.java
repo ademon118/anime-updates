@@ -8,4 +8,6 @@ public interface ReleaseService {
     Page<ReleaseInfoResponse> getAllReleaseInfo(Integer page, Integer size, @Nullable Long userId);
 
     ReleaseInfoResponse getReleaseInfoById(Long id);
+
+    Page<ReleaseInfoResponse> getAllTrackedReleaseInfo(Integer page, Integer size, Long userId);
 }

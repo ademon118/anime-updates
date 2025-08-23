@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class firebaseTokenDeactivateScheduler {
+public class FirebaseTokenDeactivateScheduler {
 
     private final FcmTokenRepository tokenRepository;
 

@@ -1,10 +1,12 @@
 package com.aura.anime_updates.features.authentication.domain.service;
 
 import com.aura.anime_updates.features.authentication.api.request.AuthRequest;
+import com.aura.anime_updates.features.authentication.api.request.LogoutRequest;
 import com.aura.anime_updates.features.authentication.api.response.AuthResponse;
 import com.aura.anime_updates.features.authentication.domain.entity.RefreshToken;
 import com.aura.anime_updates.features.authentication.domain.repository.RefreshTokenRepository;
 import com.aura.anime_updates.features.authentication.util.TokenHasher;
+import com.aura.anime_updates.features.fireBaseToken.domain.service.FcmTokenService;
 import com.aura.anime_updates.features.user.domain.service.UserService;
 import com.aura.anime_updates.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
@@ -26,6 +28,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshRepo;
     private final TokenHasher hasher;
     private final UserService userService;
+    private final FcmTokenService fcmTokenService;
 
     public AuthResponse register(AuthRequest request) {
         userService.createUser(request.getUserName(), request.getPassword());
@@ -98,12 +101,15 @@ public class AuthService {
         return new AuthResponse(newAccess, newRefresh);
     }
 
-    public void logout(String rawRefreshToken) {
-        Jws<Claims> jws = jwt.parse(rawRefreshToken);
+    public void logout(LogoutRequest logoutRequest) {
+
+        Jws<Claims> jws = jwt.parse(logoutRequest.getRefreshToken());
         if (!jwt.isRefresh(jws)) return;
         refreshRepo.findByJti(jwt.getJti(jws)).ifPresent(rt -> {
             rt.setRevokedAt(Instant.now());
             refreshRepo.save(rt);
         });
+
+        fcmTokenService.invalidateToken(logoutRequest.getFcmToken());
     }
 }

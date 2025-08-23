@@ -1,11 +1,13 @@
 package com.aura.anime_updates.features.authentication.api;
 
 import com.aura.anime_updates.features.authentication.api.request.AuthRequest;
+import com.aura.anime_updates.features.authentication.api.request.LogoutRequest;
 import com.aura.anime_updates.features.authentication.api.response.AuthResponse;
 import com.aura.anime_updates.features.authentication.domain.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,11 +39,9 @@ public class AuthApi {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String refreshToken = authHeader.substring(7);
-                authService.logout(refreshToken);
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> logout(@RequestBody LogoutRequest logoutRequest) {
+        authService.logout(logoutRequest);
         return ResponseEntity.ok().build();
     }
 }

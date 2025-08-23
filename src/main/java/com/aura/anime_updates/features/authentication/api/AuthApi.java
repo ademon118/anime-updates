@@ -1,9 +1,9 @@
-package com.aura.anime_updates.api;
+package com.aura.anime_updates.features.authentication.api;
 
 import com.aura.anime_updates.dto.ApiResponse;
-import com.aura.anime_updates.dto.AuthRequest;
-import com.aura.anime_updates.dto.AuthResponse;
-import com.aura.anime_updates.services.AuthService;
+import com.aura.anime_updates.features.authentication.api.request.AuthRequest;
+import com.aura.anime_updates.features.authentication.api.response.AuthResponse;
+import com.aura.anime_updates.features.authentication.domain.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

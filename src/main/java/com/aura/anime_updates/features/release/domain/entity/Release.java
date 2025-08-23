@@ -1,6 +1,6 @@
 package com.aura.anime_updates.features.release.domain.entity;
 
-import com.aura.anime_updates.domain.AnimeShow;
+import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UpdateTimestamp;

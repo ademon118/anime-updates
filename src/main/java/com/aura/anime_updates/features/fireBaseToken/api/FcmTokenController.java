@@ -1,14 +1,12 @@
-package com.aura.anime_updates.api;
+package com.aura.anime_updates.features.fireBaseToken.api;
 
 import com.aura.anime_updates.dto.ApiResponse;
-import com.aura.anime_updates.dto.FcmTokenRequest;
-import com.aura.anime_updates.dto.FcmTokenResponse;
+import com.aura.anime_updates.features.fireBaseToken.api.request.FcmTokenRequest;
 import com.aura.anime_updates.security.CustomUserDetails;
-import com.aura.anime_updates.services.FcmTokenService;
+import com.aura.anime_updates.features.fireBaseToken.domain.service.FcmTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

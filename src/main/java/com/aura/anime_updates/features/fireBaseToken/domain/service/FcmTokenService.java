@@ -1,12 +1,11 @@
-package com.aura.anime_updates.services;
+package com.aura.anime_updates.features.fireBaseToken.domain.service;
 
-import com.aura.anime_updates.domain.FcmToken;
-import com.aura.anime_updates.domain.User;
-import com.aura.anime_updates.dto.FcmTokenRequest;
-import com.aura.anime_updates.repository.FcmTokenRepository;
-import com.aura.anime_updates.repository.UserRepository;
+import com.aura.anime_updates.features.fireBaseToken.domain.entity.FcmToken;
+import com.aura.anime_updates.features.user.domain.entity.User;
+import com.aura.anime_updates.features.fireBaseToken.api.request.FcmTokenRequest;
+import com.aura.anime_updates.features.fireBaseToken.domain.repository.FcmTokenRepository;
+import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

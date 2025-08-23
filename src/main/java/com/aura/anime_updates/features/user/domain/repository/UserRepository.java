@@ -1,6 +1,6 @@
-package com.aura.anime_updates.repository;
+package com.aura.anime_updates.features.user.domain.repository;
 
-import com.aura.anime_updates.domain.User;
+import com.aura.anime_updates.features.user.domain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

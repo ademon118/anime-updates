@@ -1,6 +1,7 @@
-package com.aura.anime_updates.domain;
+package com.aura.anime_updates.features.animeShow.domain.entity;
 
 import com.aura.anime_updates.features.release.domain.entity.Release;
+import com.aura.anime_updates.features.user.domain.entity.User;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;

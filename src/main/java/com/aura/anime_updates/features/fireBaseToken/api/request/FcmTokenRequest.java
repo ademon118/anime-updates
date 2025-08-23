@@ -1,4 +1,4 @@
-package com.aura.anime_updates.dto;
+package com.aura.anime_updates.features.fireBaseToken.api.request;
 
 import lombok.*;
 

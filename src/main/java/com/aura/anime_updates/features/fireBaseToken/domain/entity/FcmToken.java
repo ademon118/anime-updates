@@ -1,5 +1,6 @@
-package com.aura.anime_updates.domain;
+package com.aura.anime_updates.features.fireBaseToken.domain.entity;
 
+import com.aura.anime_updates.features.user.domain.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -42,6 +43,5 @@ public class FcmToken {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
 
 }

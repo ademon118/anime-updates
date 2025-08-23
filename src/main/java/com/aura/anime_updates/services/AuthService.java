@@ -1,10 +1,10 @@
 package com.aura.anime_updates.services;
 
 
-import com.aura.anime_updates.domain.User;
+import com.aura.anime_updates.features.user.domain.entity.User;
 import com.aura.anime_updates.dto.AuthRequest;
 import com.aura.anime_updates.dto.AuthResponse;
-import com.aura.anime_updates.repository.UserRepository;
+import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import com.aura.anime_updates.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;

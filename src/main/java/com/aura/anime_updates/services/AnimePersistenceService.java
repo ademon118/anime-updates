@@ -1,8 +1,8 @@
 package com.aura.anime_updates.services;
 
-import com.aura.anime_updates.domain.AnimeShow;
+import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
 import com.aura.anime_updates.features.release.domain.entity.Release;
-import com.aura.anime_updates.repository.AnimeShowRepository;
+import com.aura.anime_updates.features.animeShow.domain.repository.AnimeShowRepository;
 import com.aura.anime_updates.features.release.domain.repository.ReleaseRepository;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,6 @@
-package com.aura.anime_updates.repository;
+package com.aura.anime_updates.features.animeShow.domain.repository;
 
-import com.aura.anime_updates.domain.AnimeShow;
+import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

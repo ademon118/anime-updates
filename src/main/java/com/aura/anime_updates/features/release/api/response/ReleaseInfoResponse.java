@@ -6,7 +6,7 @@ public record ReleaseInfoResponse(
         Long releaseId,
         Long animeShowId,
         String showTitle,
-        String downloadLink,
+        String releaseDownloadLink,
         String episode,
         String fileName,
         String imgUrl,

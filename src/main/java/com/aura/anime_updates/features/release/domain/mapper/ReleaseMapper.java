@@ -13,7 +13,7 @@ public class ReleaseMapper {
                 dto.getReleaseId(),
                 dto.getAnimeShowId(),
                 dto.getShowTitle(),
-                dto.getDownloadLink(),
+                dto.getReleaseDownloadLink(),
                 dto.getEpisode(),
                 dto.getFileName(),
                 dto.getImgUrl(),

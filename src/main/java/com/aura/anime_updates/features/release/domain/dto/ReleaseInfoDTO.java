@@ -6,7 +6,7 @@ public interface ReleaseInfoDTO {
     Long getReleaseId();
     Long getAnimeShowId();
     String getShowTitle();
-    String getDownloadLink();
+    String getReleaseDownloadLink();
     String getEpisode();
     String getFileName();
     String getImgUrl();

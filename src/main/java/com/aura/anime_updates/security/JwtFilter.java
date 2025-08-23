@@ -2,12 +2,16 @@ package com.aura.anime_updates.security;
 
 import com.aura.anime_updates.features.authentication.domain.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -41,8 +45,11 @@ public class JwtFilter extends OncePerRequestFilter {
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
+            } catch (JwtException e) {
+                //TODO: QUICKIE IMPLEMENTATION, ADD PROPER ERROR RESPONSE HANDLING FOR AUTH
+                res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                return;
             } catch (Exception ignored) {
-
             }
         }
         chain.doFilter(req, res);

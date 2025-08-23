@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.aura.anime_updates.dto.TrackedShowDto;
@@ -32,10 +33,10 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "anime_show_id")
     )
-    private Set<AnimeShow> trackedShows = new HashSet<>();
+    private List<AnimeShow> trackedShows;
 
 
-    public void setTrackedShows(Set<AnimeShow> trackedShows) {
+    public void setTrackedShows(List<AnimeShow> trackedShows) {
         this.trackedShows = trackedShows;
     }
 
@@ -58,5 +59,18 @@ public class User {
                 ))
                 .sorted((a,b)->b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .collect(Collectors.toSet());
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User user)) return false;
+        return id != null && id.equals(user.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

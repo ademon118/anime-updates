@@ -5,6 +5,7 @@ import com.aura.anime_updates.features.user.domain.entity.User;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -16,6 +17,8 @@ import java.util.List;
 @Entity
 @Table(name = "anime_shows")
 @EntityListeners(AuditingEntityListener.class)
+@Getter
+@Setter
 public class AnimeShow {
 
     @Id
@@ -59,53 +62,11 @@ public class AnimeShow {
         this.imageUrl = imageUrl;
     }
 
-    public Long getId(){
-        return this.id;
+    public void addTracker(User user) {
+        this.trackingUsers.add(user);
     }
 
-    public void setId(Long id){
-        this.id = id;
+    public void removeTracker(User user) {
+        this.trackingUsers.remove(user);
     }
-
-    public String getTitle(){
-        return this.title;
-    }
-
-    public void setTitle(String title){
-        this.title = title;
-    }
-
-    public  LocalDateTime getCreatedAt(){
-        return this.createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt){
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt(){
-        return this.updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt){
-        this.updatedAt = updatedAt;
-    }
-
-    public String getImageUrl(){
-        return this.imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl){
-        this.imageUrl = imageUrl;
-    }
-
-    public List<Release> getReleases() {
-        return releases;
-    }
-
-    public void setReleases(List<Release> releases) {
-        this.releases = releases;
-    }
-
-
 }

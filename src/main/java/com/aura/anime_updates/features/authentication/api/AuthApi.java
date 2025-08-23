@@ -1,47 +1,47 @@
 package com.aura.anime_updates.features.authentication.api;
 
-import com.aura.anime_updates.dto.ApiResponse;
 import com.aura.anime_updates.features.authentication.api.request.AuthRequest;
 import com.aura.anime_updates.features.authentication.api.response.AuthResponse;
 import com.aura.anime_updates.features.authentication.domain.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@Slf4j
 public class AuthApi {
-    @Autowired
-    private AuthService authService;
+
+    private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<?>> register(@RequestBody AuthRequest request){
-        try {
-            AuthResponse authResponse = authService.register(request);
-            if (authResponse.isSuccess()) {
-                return ResponseEntity.ok(ApiResponse.successWithToken(authResponse.getToken(), authResponse.getMessage()));
-            } else {
-                return ResponseEntity.badRequest().body(ApiResponse.error(authResponse.getMessage(), 400));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Registration failed: " + e.getMessage(), 400));
-        }
+    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(@RequestBody AuthRequest request){
-        try {
-            AuthResponse authResponse = authService.login(request);
-            if (authResponse.isSuccess()) {
-                return ResponseEntity.ok(ApiResponse.successWithToken(authResponse.getToken(), authResponse.getMessage()));
-            } else {
-                return ResponseEntity.badRequest().body(ApiResponse.error(authResponse.getMessage(), 400));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Login failed: " + e.getMessage(), 400));
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().build();
         }
+
+        String refreshToken = authHeader.substring(7);
+        return ResponseEntity.ok(authService.refresh(refreshToken));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String refreshToken = authHeader.substring(7);
+                authService.logout(refreshToken);
+        }
+        return ResponseEntity.ok().build();
     }
 }

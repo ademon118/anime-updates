@@ -46,7 +46,7 @@ public class GetAnimeLinkService {
     private final AnimePersistenceService animePersistenceService;
     private final UserRepository userRepository;
     private final FcmNotificationService notificationService;
-    private final TrackingService trackingService;
+    //private final TrackingService trackingService;
 
     //Fetches RSS data, queries Jikan API for images, and stores new anime and releases
     @Transactional
@@ -131,7 +131,7 @@ public class GetAnimeLinkService {
 
                 Thread.sleep(5000);
             }
-            
+
             if (!updatedShows.isEmpty()) {
                 animeShowRepository.saveAll(updatedShows);
             }
@@ -169,7 +169,7 @@ public class GetAnimeLinkService {
 
     public List<AnimeDownloadInfo> getAllAnimeDownloadInfo(Long userId) {
         Set<Long> trackedShowIds = new HashSet<>();
-        
+
         if (userId != null) {
             try {
                 User user = userRepository.findById(userId).orElse(null);
@@ -231,7 +231,7 @@ public class GetAnimeLinkService {
 
     private AnimeDownloadInfoPage toDtoPage(Page<AnimeShow> animePage, Long userId) {
         Set<Long> trackedShowIds = new HashSet<>();
-        
+
         if (userId != null) {
             try {
                 User user = userRepository.findById(userId).orElse(null);
@@ -269,4 +269,3 @@ public class GetAnimeLinkService {
 
 }
 
- 

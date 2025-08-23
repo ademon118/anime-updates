@@ -6,13 +6,16 @@ import com.aura.anime_updates.features.fireBaseToken.api.request.FcmTokenRequest
 import com.aura.anime_updates.features.fireBaseToken.domain.repository.FcmTokenRepository;
 import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FcmTokenService {
 
     private final FcmTokenRepository fcmTokenRepository;
@@ -49,6 +52,17 @@ public class FcmTokenService {
                     });
         } catch(Exception e) {
             System.out.println("Error registering token : " + e);
+        }
+    }
+
+    public void invalidateToken(String fcmToken) {
+        try {
+            FcmToken fcmTokenToInvalidate = this.fcmTokenRepository.findByToken(fcmToken)
+                    .orElseThrow();
+            fcmTokenToInvalidate.deactivate();
+            fcmTokenRepository.saveAndFlush(fcmTokenToInvalidate);
+        } catch (Exception e) {
+            log.warn("Error deactivating token {}", fcmToken);
         }
     }
 

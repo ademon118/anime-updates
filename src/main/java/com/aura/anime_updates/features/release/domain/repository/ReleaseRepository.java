@@ -58,6 +58,33 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
             nativeQuery = true)
     Optional<ReleaseInfoResponse> findReleaseById(@Param("id") Long id);
 
+
+    @Query(value = """
+    SELECT
+        re.id AS releaseId,
+        re.anime_shows_id AS animeShowId,
+        sh.title AS showTitle,
+        re.download_link AS releaseDownloadLink,
+        re.episode AS episode,
+        re.file_name AS fileName,
+        sh.image_url AS imgUrl,
+        re.created_at AS releasedDate,
+        TRUE AS tracked
+    FROM user_tracked_shows tr
+    JOIN anime_shows sh ON tr.anime_show_id = sh.id
+    JOIN releases re ON sh.id = re.anime_shows_id
+    WHERE tr.user_id = :userId
+    ORDER BY re.created_at DESC
+    """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM user_tracked_shows tr
+            JOIN anime_shows sh ON tr.anime_show_id = sh.id
+            JOIN releases re ON sh.id = re.anime_shows_id
+            WHERE tr.user_id = :userId
+            """,
+            nativeQuery = true)
+    Page<ReleaseInfoDTO> getAllTrackedReleases(Pageable pageable, @Param("userId") Long userId);
 }
 
 

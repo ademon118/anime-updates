@@ -52,4 +52,20 @@ public class ReleaseServiceImpl implements ReleaseService {
                     return new RuntimeException("Could not find release with id: " + id);
                 });
     }
+
+    @Override
+    public Page<ReleaseInfoResponse> getAllTrackedReleaseInfo(Integer page, Integer size, Long userId) {
+        log.info("Fetching tracked releases by userId={} with page={} and size={}", userId, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        System.out.println(userId);
+        try{
+            Page<ReleaseInfoDTO> trackedReleaseInfo =  releaseRepository.getAllTrackedReleases(pageable, userId);
+            log.debug("Fetched {} releases out of total {}",
+                    trackedReleaseInfo.getNumberOfElements(), trackedReleaseInfo.getTotalElements());
+
+            return this.releaseMapper.toResponsePage(trackedReleaseInfo);
+        } catch (DataAccessException e){
+            throw new RuntimeException("Database error while fetching releases", e);
+        }
+    }
 }

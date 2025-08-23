@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class UserAccountDeactivateScheduler {
+public class firebaseTokenDeactivateScheduler {
 
     private final FcmTokenRepository tokenRepository;
 
@@ -20,7 +20,7 @@ public class UserAccountDeactivateScheduler {
     private int inactiveDays;
 
     @Scheduled(cron = "${scheduler.deactivate-tokens.cron}", zone = "${scheduler.deactivate-tokens.zone}")
-    public void deactivateAccount() {
+    public void deactivateFCMTokens() {
 
         try {
             LocalDateTime cutoffDate = LocalDateTime.now().minusDays(inactiveDays);

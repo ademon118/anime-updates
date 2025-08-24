@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TestApi {
 
-    private final String PASSWORD_ENCRYPTED = "$2a$12$w8G8Uq8tQF9ZyY1cM6QY9eD3rD7e5o5r3n9Xj3l7jzF1i3T8b3v7";
+    private final String PASSWORD_ENCRYPTED = "$2a$12$LCAtczpKqtkL66QJkjvqGeSdMxhirWu.muV64qUa/H7J3PUMKAp0y";
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final FcmNotificationService notiService;
     private final UserRepository userRepository;

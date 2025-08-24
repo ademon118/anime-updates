@@ -18,7 +18,6 @@ public class ReleaseApiController {
 
     private final ReleaseService releaseService;
 
-    //TODO: ADD AN OPTIONAL TOKEN HERE AND PASS userId, default being null
     @GetMapping("/get-releases")
     public ResponseEntity<Page<ReleaseInfoResponse>> getReleaseLinks(
             @RequestParam(defaultValue = "0")  Integer page,
@@ -30,6 +29,20 @@ public class ReleaseApiController {
             userId = currentUser.getId();
         }
         return ResponseEntity.ok(releaseService.getAllReleaseInfo(page, size, userId));
+    }
+
+    @GetMapping("/{searchText}/get-releases")
+    public ResponseEntity<Page<ReleaseInfoResponse>> searchAndGetReleaseLinks(
+            @PathVariable String searchText,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        Long userId = null;
+        if(currentUser != null) {
+            userId = currentUser.getId();
+        }
+        return ResponseEntity.ok(releaseService.searchAllReleaseInfo(page, size, searchText, userId));
     }
 
     @GetMapping("/get-release/{id}")

@@ -39,6 +39,22 @@ public class ReleaseServiceImpl implements ReleaseService {
     }
 
     @Override
+    public Page<ReleaseInfoResponse> searchAllReleaseInfo(Integer page, Integer size, String searchText, @Nullable Long userId){
+        log.info("Fetching releases with page={} and size={}", page, size);
+        Pageable pageable = PageRequest.of(page, size);
+
+        try{
+            Page<ReleaseInfoDTO> releaseInfo =  releaseRepository.getReleaseInfoWithSearchText(pageable, searchText.toLowerCase(), userId);
+            log.debug("Fetched {} releases out of total {}",
+                    releaseInfo.getNumberOfElements(), releaseInfo.getTotalElements());
+
+            return releaseMapper.toResponsePage(releaseInfo);
+        } catch (DataAccessException e){
+            throw new RuntimeException("Database error while fetching releases", e);
+        }
+    }
+
+    @Override
     public ReleaseInfoResponse getReleaseInfoById(Long id) {
         log.info("Fetching release info for id={}", id);
 

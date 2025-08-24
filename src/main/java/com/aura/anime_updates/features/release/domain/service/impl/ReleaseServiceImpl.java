@@ -54,6 +54,20 @@ public class ReleaseServiceImpl implements ReleaseService {
     }
 
     @Override
+    public Page<ReleaseInfoResponse> getReleaseInfoByAnimeShow(Integer page, Integer size, Long animeShowId, Long userId) {
+        log.info("Fetching release infos for anime show id={}", animeShowId);
+
+        Pageable pageable = PageRequest.of(page, size);
+        try {
+            Page<ReleaseInfoDTO> releases = releaseRepository.getAllReleasesOfAnimeShow(pageable, animeShowId, userId);
+
+            return releaseMapper.toResponsePage(releases);
+        } catch (Exception e) {
+            throw new RuntimeException("Database error while fetching releases", e);
+        }
+    }
+
+    @Override
     public Page<ReleaseInfoResponse> getAllTrackedReleaseInfo(Integer page, Integer size, Long userId) {
         log.info("Fetching tracked releases by userId={} with page={} and size={}", userId, page, size);
         Pageable pageable = PageRequest.of(page, size);

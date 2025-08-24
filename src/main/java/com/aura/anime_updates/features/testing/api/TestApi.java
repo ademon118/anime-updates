@@ -4,6 +4,8 @@ import com.aura.anime_updates.features.fireBaseToken.domain.entity.FcmToken;
 import com.aura.anime_updates.features.fireBaseToken.domain.repository.FcmTokenRepository;
 import com.aura.anime_updates.features.fireBaseToken.domain.service.FcmNotificationService;
 import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
+import com.aura.anime_updates.features.release.domain.mapper.ReleaseMapper;
+import com.aura.anime_updates.features.release.domain.repository.ReleaseRepository;
 import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
@@ -25,6 +27,8 @@ public class TestApi {
     private final FcmNotificationService notiService;
     private final UserRepository userRepository;
     private final FcmTokenRepository fcmTokenRepository;
+    private final ReleaseRepository releaseRepository;
+    private final ReleaseMapper releaseMapper;
 
     @GetMapping("/noti")
     public String sendNoti(@RequestParam String password) {
@@ -32,18 +36,7 @@ public class TestApi {
             return null;
         }
 
-        ReleaseInfoResponse releaseInfoResponse = new ReleaseInfoResponse(
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
+        ReleaseInfoResponse releaseInfoResponse = releaseRepository.findReleaseById(1L).get();
 
         Notification notification = Notification.builder()
                 .setTitle("Title")
@@ -55,9 +48,8 @@ public class TestApi {
         Message message = Message.builder()
                 .setToken(token.getToken())
                 .setNotification(notification)
-                .putData("test key", "test value")
+                .putAllData(releaseMapper.toMap(releaseInfoResponse))
                 .build();
-
 
         try {
 
@@ -66,6 +58,7 @@ public class TestApi {
         } catch(Exception e) {
             System.out.println("Error: " + e);
         }
+
         return "Test Complete";
     }
 }

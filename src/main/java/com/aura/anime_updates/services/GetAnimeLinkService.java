@@ -203,10 +203,10 @@ public class GetAnimeLinkService {
                 .collect(Collectors.toList());
     }
 
-    private String extractEpisodeNumber(String title){
-        Pattern pattern = Pattern.compile("\\-\\s*(\\d{2})\\s*\\(");
+    private String extractEpisodeNumber(String title) {
+        Pattern pattern = Pattern.compile("\\-\\s*(\\d{1,4}(?:v\\d+)?)(?=\\s*\\()");
         Matcher matcher = pattern.matcher(title);
-        return matcher.find()?matcher.group(1) : null;
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     public AnimeDownloadInfoPage getAllAnimeDownloadInfoPaginated(int page, int size) {

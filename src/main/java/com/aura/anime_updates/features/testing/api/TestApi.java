@@ -6,6 +6,7 @@ import com.aura.anime_updates.features.fireBaseToken.domain.service.FcmNotificat
 import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.features.release.domain.mapper.ReleaseMapper;
 import com.aura.anime_updates.features.release.domain.repository.ReleaseRepository;
+import com.aura.anime_updates.features.user.domain.entity.User;
 import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/test")
@@ -29,6 +33,7 @@ public class TestApi {
     private final FcmTokenRepository fcmTokenRepository;
     private final ReleaseRepository releaseRepository;
     private final ReleaseMapper releaseMapper;
+    private final FcmNotificationService notificationService;
 
     @GetMapping("/noti")
     public String sendNoti(@RequestParam String password) {
@@ -36,28 +41,30 @@ public class TestApi {
             return null;
         }
 
+        User user = userRepository.findById(1L).get();
         ReleaseInfoResponse releaseInfoResponse = releaseMapper.toResponse(releaseRepository.findReleaseById(1L).get());
-
+        List<User> users = new ArrayList<>();
+        users.add(user);
         Notification notification = Notification.builder()
                 .setTitle("Title")
                 .setBody("Body")
                 .setImage("https://www.dictionary.com/e/wp-content/uploads/2018/03/rickrolling.jpg")
                 .build();
+        notificationService.sendNotificationToAllDevicesOfUsers(users, notification);
+//        FcmToken token = fcmTokenRepository.findById(1L).get();
+//        Message message = Message.builder()
+//                .setToken(token.getToken())
+//                .setNotification(notification)
+//                .putAllData(releaseMapper.toMap(releaseInfoResponse))
+//                .build();
 
-        FcmToken token = fcmTokenRepository.findById(1L).get();
-        Message message = Message.builder()
-                .setToken(token.getToken())
-                .setNotification(notification)
-                .putAllData(releaseMapper.toMap(releaseInfoResponse))
-                .build();
-
-        try {
-
-            FirebaseMessaging.getInstance().send(message);
-
-        } catch(Exception e) {
-            System.out.println("Error: " + e);
-        }
+//        try {
+//
+//            FirebaseMessaging.getInstance().send(message);
+//
+//        } catch(Exception e) {
+//            System.out.println("Error: " + e);
+//        }
 
         return "Test Complete";
     }

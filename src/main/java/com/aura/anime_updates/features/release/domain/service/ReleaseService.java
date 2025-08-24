@@ -8,6 +8,8 @@ import org.springframework.lang.Nullable;
 public interface ReleaseService {
     Page<ReleaseInfoResponse> getAllReleaseInfo(Integer page, Integer size, @Nullable Long userId);
 
+    Page<ReleaseInfoResponse> searchAllReleaseInfo(Integer page, Integer size, String searchText, @Nullable Long userId);
+
     ReleaseInfoResponse getReleaseInfoById(Long id);
 
     Page<ReleaseInfoResponse> getReleaseInfoByAnimeShow(Integer page, Integer size, Long animeShowId, @Nullable Long userId);

@@ -119,6 +119,40 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     )
     Page<ReleaseInfoDTO> getAllReleasesOfAnimeShow(Pageable pageable, @Param("animeShowId") Long animeShowId,
                                                                       @Param("userId") Long userId);
+
+
+    @Query(value = """
+        SELECT
+            r.id AS releaseId,
+            r.anime_shows_id AS animeShowId,
+            ans.title AS showTitle,
+            r.download_link AS releaseDownloadLink,
+            r.episode AS episode,
+            r.file_name AS fileName,
+            ans.image_url AS imgUrl,
+            r.created_at as releasedDate,
+            CASE
+                WHEN :userId IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1 FROM user_tracked_shows t
+                        WHERE ans.id = t.anime_show_id AND t.user_id = :userId
+                        )
+                THEN TRUE
+                ELSE FALSE
+            END AS tracked
+        FROM releases r
+        JOIN anime_shows ans ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT(:searchText, '%')
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+                    SELECT COUNT(*) FROM releases r
+                    JOIN anime_shows ans
+                    ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT(:searchText, '%')
+                    """,
+            nativeQuery = true)
+    Page<ReleaseInfoDTO> getReleaseInfoWithSearchText(Pageable pageable,
+                                                      @Param("searchText") String searchText,
+                                                      @Param("userId") Long userId);
 }
 
 

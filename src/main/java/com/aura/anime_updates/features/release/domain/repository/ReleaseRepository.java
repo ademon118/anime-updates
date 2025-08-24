@@ -141,13 +141,13 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 ELSE FALSE
             END AS tracked
         FROM releases r
-        JOIN anime_shows ans ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT(:searchText, '%')
+        JOIN anime_shows ans ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT('%', :searchText, '%')
         ORDER BY r.created_at DESC
         """,
             countQuery = """
                     SELECT COUNT(*) FROM releases r
                     JOIN anime_shows ans
-                    ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT(:searchText, '%')
+                    ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT('%', :searchText, '%')
                     """,
             nativeQuery = true)
     Page<ReleaseInfoDTO> getReleaseInfoWithSearchText(Pageable pageable,

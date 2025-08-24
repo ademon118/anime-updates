@@ -50,13 +50,14 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         r.episode AS episode,
         r.file_name AS fileName,
         ans.image_url AS imgUrl,
-        r.created_at as releasedDate
+        r.created_at as releasedDate,
+        FALSE AS tracked
     FROM releases r
     JOIN anime_shows ans ON ans.id = r.anime_shows_id
     WHERE r.id = :id
     """,
             nativeQuery = true)
-    Optional<ReleaseInfoResponse> findReleaseById(@Param("id") Long id);
+    Optional<ReleaseInfoDTO> findReleaseById(@Param("id") Long id);
 
 
     @Query(value = """

@@ -58,15 +58,7 @@ public class ReleaseServiceImpl implements ReleaseService {
     public ReleaseInfoResponse getReleaseInfoById(Long id) {
         log.info("Fetching release info for id={}", id);
 
-        return releaseRepository.findReleaseById(id)
-                .map(release -> {
-                    log.debug("Found release: {}", release.showTitle());
-                    return release;
-                })
-                .orElseThrow(() -> {
-                    log.error("Release not found with id={}", id);
-                    return new RuntimeException("Could not find release with id: " + id);
-                });
+        return releaseMapper.toResponse(releaseRepository.findReleaseById(id).get());
     }
 
     @Override

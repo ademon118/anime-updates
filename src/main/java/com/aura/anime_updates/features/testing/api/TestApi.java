@@ -36,7 +36,7 @@ public class TestApi {
             return null;
         }
 
-        ReleaseInfoResponse releaseInfoResponse = releaseRepository.findReleaseById(1L).get();
+        ReleaseInfoResponse releaseInfoResponse = releaseMapper.toResponse(releaseRepository.findReleaseById(1L).get());
 
         Notification notification = Notification.builder()
                 .setTitle("Title")

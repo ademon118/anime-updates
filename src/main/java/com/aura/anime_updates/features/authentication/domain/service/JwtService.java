@@ -32,7 +32,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String createAccessToken(Long userId, String username) {
+    public String createAccessToken(Long userId, String username, String refreshJti) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(accessMinutes * 60);
         return Jwts.builder()
@@ -41,6 +41,7 @@ public class JwtService {
                 .subject(String.valueOf(userId))
                 .claim("username", username)
                 .claim("typ", "access")
+                .claim("rt", refreshJti)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .id(UUID.randomUUID().toString())
@@ -81,5 +82,9 @@ public class JwtService {
 
     public String getJti(Jws<Claims> jws) {
         return jws.getPayload().getId();
+    }
+
+    public String getRefreshJtiFromAccess(Jws<Claims> jws) {
+        return jws.getPayload().get("rt", String.class);
     }
 }

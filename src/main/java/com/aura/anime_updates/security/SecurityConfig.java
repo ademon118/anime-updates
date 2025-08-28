@@ -1,5 +1,6 @@
 package com.aura.anime_updates.security;
 
+import com.aura.anime_updates.features.authentication.domain.repository.RefreshTokenRepository;
 import com.aura.anime_updates.features.authentication.domain.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -18,10 +19,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtService jwtService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        JwtFilter jwtFilter = new JwtFilter(jwtService);
+        JwtFilter jwtFilter = new JwtFilter(jwtService, refreshTokenRepository);
 
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

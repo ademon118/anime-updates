@@ -47,7 +47,6 @@ public class AuthService {
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
         Long userId = principal.getId();
 
-        String access = jwt.createAccessToken(userId, principal.getUsername());
         String refresh = jwt.createRefreshToken(userId);
 
         Jws<Claims> jws = jwt.parse(refresh);
@@ -62,6 +61,7 @@ public class AuthService {
                 .expiresAt(exp)
                 .build());
 
+        String access = jwt.createAccessToken(userId, principal.getUsername(), jti);
         return new AuthResponse(access, refresh);
     }
 
@@ -82,17 +82,18 @@ public class AuthService {
         if (!hasher.verify(rawRefreshToken, db.getTokenHash()))
             throw new IllegalStateException("Refresh token mismatch");
 
-        String newAccess = jwt.createAccessToken(userId, username);
         String newRefresh = jwt.createRefreshToken(userId);
 
         Jws<Claims> newJws = jwt.parse(newRefresh);
+        String newJti = jwt.getJti(newJws);
+        String newAccess = jwt.createAccessToken(userId, username, newJti);
         db.setRevokedAt(Instant.now());
-        db.setReplacedByJti(jwt.getJti(newJws));
+        db.setReplacedByJti(newJti);
         refreshRepo.save(db);
 
         refreshRepo.save(RefreshToken.builder()
                 .userId(userId)
-                .jti(jwt.getJti(newJws))
+                .jti(newJti)
                 .tokenHash(hasher.hash(newRefresh))
                 .createdAt(Instant.now())
                 .expiresAt(newJws.getPayload().getExpiration().toInstant())

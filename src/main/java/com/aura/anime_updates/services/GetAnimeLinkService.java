@@ -67,7 +67,8 @@ public class GetAnimeLinkService {
                 LocalDateTime releasedDate = entry.getPublishedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
                 String episode = extractEpisodeNumber(rawTitle);
-                String filename = rawTitle.replaceAll("\\.mkv$", "");
+                String filename = rawTitle;
+//                String filename = rawTitle.replaceAll("\\.mkv$", "");
 
                 if( episode == null ||  category == null || !link.contains("nyaa.si")){
                     continue;

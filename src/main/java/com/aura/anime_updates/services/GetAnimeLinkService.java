@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GetAnimeLinkService {
-    private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
+    private static final String RSS_URL = "https://subsplease.org/rss/?m&r=1080";
     private static final String JIKAN_API_BASE = "https://api.jikan.moe/v4/anime?q=";
 
     private final AnimeShowRepository animeShowRepository;

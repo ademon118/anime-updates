@@ -76,7 +76,7 @@ public class GetAnimeLinkService {
 
                 String cleanTitle = category.replaceAll("\\s*-\\s*1080", "").trim();
 
-                if (releaseRepository.existsByDownloadLink(filename)) {
+                if (releaseRepository.existsByFileName(filename)) {
                     continue;
                 }
 

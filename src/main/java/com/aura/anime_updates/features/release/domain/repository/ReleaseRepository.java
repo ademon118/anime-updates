@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface ReleaseRepository extends JpaRepository<Release, Long> {
     boolean existsByDownloadLink(String downloadLink);
 
+    boolean existsByFileName(String fileName);
+
     @Query(value = """
         SELECT
             r.id AS releaseId,

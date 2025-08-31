@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GetAnimeLinkService {
-    private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
+    private static final String RSS_URL = "https://subsplease.org/rss/?r=1080";
     private static final String JIKAN_API_BASE = "https://api.jikan.moe/v4/anime?q=";
 
     private final AnimeShowRepository animeShowRepository;
@@ -70,13 +70,13 @@ public class GetAnimeLinkService {
                 String filename = rawTitle;
 //                String filename = rawTitle.replaceAll("\\.mkv$", "");
 
-                if( episode == null ||  category == null || !link.contains("nyaa.si")){
+                if( episode == null ||  category == null || !link.contains("magnet")){
                     continue;
                 }
 
                 String cleanTitle = category.replaceAll("\\s*-\\s*1080", "").trim();
 
-                if (releaseRepository.existsByDownloadLink(link)) {
+                if (releaseRepository.existsByDownloadLink(filename)) {
                     continue;
                 }
 

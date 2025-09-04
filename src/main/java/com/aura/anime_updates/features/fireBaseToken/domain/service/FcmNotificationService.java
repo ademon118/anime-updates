@@ -30,6 +30,7 @@ public class FcmNotificationService {
 
                     FirebaseMessaging.getInstance().send(message);
                 } catch (Exception e) {
+
                     System.out.println("Error in Firebase Messaging: " + e.getMessage());
                 }
             }

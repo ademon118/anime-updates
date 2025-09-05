@@ -1,27 +1,26 @@
 package com.aura.anime_updates.schedular;
 
 
-import com.aura.anime_updates.services.GetAnimeLinkService;
+import com.aura.anime_updates.features.newreleasefetcher.NewReleasesFetchingService;
+import com.aura.anime_updates.features.newreleasefetcher.imagefetcher.ImageFetchingService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class AnimeSchedular {
-    private final GetAnimeLinkService getAnimeLinkService;
-
-    public AnimeSchedular(GetAnimeLinkService getAnimeLinkService){
-        this.getAnimeLinkService = getAnimeLinkService;
-    }
+    private final NewReleasesFetchingService newReleasesFetchingService;
+    private final ImageFetchingService imageFetchingService;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     public void fetchAnimeEveryFiveMinute(){
-        getAnimeLinkService.fetchAndSaveNewAnimeShows();
+        newReleasesFetchingService.fetchAndSave();
     }
 
-    // Backfill missing images every 30 minutes
     @Scheduled(fixedRate = 5 * 60 * 1000)
     public void backfillMissingImagesEveryThirtyMinutes(){
-        getAnimeLinkService.backfillMissingImages();
+        imageFetchingService.backfillMissingImages();
     }
 
 }

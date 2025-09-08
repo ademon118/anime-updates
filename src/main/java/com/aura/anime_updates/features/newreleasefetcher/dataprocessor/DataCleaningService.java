@@ -49,7 +49,7 @@ public class DataCleaningService {
 
     private String transformEpisode (String rawTitle) {
         Matcher matcher = episodePatternRegex.matcher(rawTitle);
-        return matcher.group(1);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     private String transformAnimeShowTitle(String category) {

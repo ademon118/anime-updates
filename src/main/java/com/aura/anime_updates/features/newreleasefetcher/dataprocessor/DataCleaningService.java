@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class DataCleaningService {
 
     private final ImageFetchingService imageFetcher;
-    Pattern episodePatternRegex = Pattern.compile("\\-\\s*(\\d{1,4}(?:v\\d+)?)(?=\\s*\\()");
+    Pattern episodePatternRegex = Pattern.compile(".*-\\s*([^\\(\\s]+)\\s*\\(1080p\\)");
 
     public List<TransformedEntry> cleanAndTransformEntries(List<RSSEntry> entries) {
         List<TransformedEntry> transformedEntries = new ArrayList<>();

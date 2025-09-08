@@ -33,7 +33,7 @@ public class DataCleaningService {
                             .downloadLink(entry.link())
                             .fileName(entry.title())
                             .releasedDate(transformPublishedDate(entry.publishedDate()))
-                            .imageUrl(transformAnimeShowTitle(entry.category()))
+                            .imageUrl(imageFetcher.fetchImageForAnimeShow(transformAnimeShowTitle(entry.category())))
                             .build()
             );
 

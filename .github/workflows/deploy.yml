@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - production
+      - test
 
 jobs:
   deploy:
@@ -32,10 +32,10 @@ jobs:
           port: ${{ secrets.EC2_PORT }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: rm -f /opt/anime-updates/anime-updates.jar
+          script: rm -f /opt/anime-updates/anime-updates-test.jar
 
       - name: Copy JAR to root for scp
-        run: cp build/libs/anime-updates.jar ./anime-updates.jar
+        run: cp build/libs/anime-updates-test.jar ./anime-updates-test.jar
 
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -44,7 +44,7 @@ jobs:
           port: ${{ secrets.EC2_PORT }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "anime-updates.jar"
+          source: "anime-updates-test.jar"
           target: "/opt/anime-updates/"
 
       - name: Restart systemd service
@@ -55,4 +55,4 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo systemctl restart ${{ secrets.SERVICE_NAME }}
+            sudo systemctl restart ${{ secrets.TEST_SERVICE_NAME }}

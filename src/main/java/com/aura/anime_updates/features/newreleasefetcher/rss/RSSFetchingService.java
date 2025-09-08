@@ -19,7 +19,7 @@ import java.util.List;
 @Slf4j
 public class RSSFetchingService {
 
-    private static final String RSS_URL = "https://subsplease.org/rss/?t&r=1080";
+    private static final String RSS_URL = "https://subsplease.org/rss/?r=1080";
 
 
     public List<RSSEntry> fetchAnimeRSSFeed() {

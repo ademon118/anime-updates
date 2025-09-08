@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.aura'
-version = 'test'
+version = ''
 
 java {
 	toolchain {

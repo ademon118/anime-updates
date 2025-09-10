@@ -16,13 +16,13 @@ import java.util.List;
 @Slf4j
 public class ImageFetchingService {
 
-    private final String JIKAN_API = "https://api.jikan.moe/v4/anime?q=";
+    private final String JIKAN_API = "https://api.jikan.moe/v4/anime?q={title}";
     private final RestTemplate restTemplate = new RestTemplate();
     private final AnimeShowRepository animeShowRepository;
 
     public String fetchImageForAnimeShow(String title) {
         try {
-            String jikanResponse = restTemplate.getForObject(JIKAN_API, String.class);
+            String jikanResponse = restTemplate.getForObject(JIKAN_API, String.class, title);
             JSONObject jsonObject = new JSONObject(jikanResponse);
 
             if(jsonObject.has("data") && jsonObject.getJSONArray("data").length() > 0) {

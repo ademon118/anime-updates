@@ -16,7 +16,7 @@ import java.util.List;
 @Slf4j
 public class ImageFetchingService {
 
-    private final String JIKAN_API = "https://api.jikan.moe/v4/anime?q={title}";
+    private final String JIKAN_API = "https://api.jikan.moe/v4/anime?q={title}&status=airing";
     private final RestTemplate restTemplate = new RestTemplate();
     private final AnimeShowRepository animeShowRepository;
 

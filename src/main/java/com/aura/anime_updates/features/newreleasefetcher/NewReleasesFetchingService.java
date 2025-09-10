@@ -59,7 +59,7 @@ public class NewReleasesFetchingService {
                     )
             ).getId();
 
-            publisher.publishEvent(new NewReleaseEvent(this, releaseId));
+            publisher.publishEvent(new NewReleaseEvent(this, releaseId, entry.episode(), animeShow.getId(), entry.imageUrl()));
 
         } catch (Exception e) {
             log.error("Failed to save a release with error : {}", e.getMessage());

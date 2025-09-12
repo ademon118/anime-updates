@@ -8,6 +8,7 @@ import java.util.Date;
 public record RSSEntry (
         String title,
         String link,
+        String size,
         String category,
         Date publishedDate
 ) {}

@@ -31,6 +31,7 @@ public class DataCleaningService {
                             .animeShowName(transformAnimeShowTitle(entry.category()))
                             .episode(transformEpisode(entry.title()))
                             .downloadLink(entry.link())
+                            .fileSize(entry.size())
                             .fileName(entry.title())
                             .releasedDate(transformPublishedDate(entry.publishedDate()))
                             .imageUrl(imageFetcher.fetchImageForAnimeShow(transformAnimeShowTitle(entry.category())))

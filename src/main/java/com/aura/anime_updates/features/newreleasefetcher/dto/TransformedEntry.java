@@ -9,6 +9,7 @@ public record TransformedEntry (
         String animeShowName,
         String episode,
         String downloadLink,
+        String fileSize,
         LocalDateTime releasedDate,
         String fileName,
         String imageUrl

@@ -20,6 +20,7 @@ public class ReleaseMapper {
                 dto.getReleaseDownloadLink(),
                 dto.getEpisode(),
                 dto.getFileName(),
+                dto.getFileSize(),
                 dto.getImgUrl(),
                 dto.getReleasedDate(),
                 dto.getTracked() != null && dto.getTracked() == 1
@@ -39,6 +40,7 @@ public class ReleaseMapper {
         map.put("releaseDownloadLink", release.releaseDownloadLink());
         map.put("episode", release.episode());
         map.put("fileName", release.fileName());
+        map.put("fileSize", release.fileSize());
         map.put("imgUrl", release.imgUrl());
         map.put("releasedDate", release.releasedDate().toString());
         map.put("tracked", String.valueOf(release.tracked()));

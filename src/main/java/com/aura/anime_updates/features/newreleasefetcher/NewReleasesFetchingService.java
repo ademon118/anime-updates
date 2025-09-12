@@ -55,6 +55,7 @@ public class NewReleasesFetchingService {
                             entry.episode(),
                             entry.releasedDate(),
                             entry.fileName(),
+                            entry.fileSize(),
                             animeShow
                     )
             ).getId();

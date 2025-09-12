@@ -7,6 +7,7 @@ import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jdom2.Element;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
@@ -31,11 +32,19 @@ public class RSSFetchingService {
             List<RSSEntry> rssEntries = new ArrayList<>();
 
             for(SyndEntry entry : feed.getEntries()) {
+                String size = null;
+                List<Element> foreign = (List<Element>) entry.getForeignMarkup();
+                for (Element elem : foreign) {
+                    if ("size".equals(elem.getName()) && "subsplease".equals(elem.getNamespacePrefix())) {
+                        size = elem.getTextNormalize();
+                    }
+                }
                 rssEntries.add(
                         RSSEntry.builder()
                                 .title(entry.getTitle())
                                 .link(entry.getLink())
                                 .category(entry.getCategories().get(0).getName())
+                                .size(size)
                                 .publishedDate(entry.getPublishedDate())
                                 .build()
                 );

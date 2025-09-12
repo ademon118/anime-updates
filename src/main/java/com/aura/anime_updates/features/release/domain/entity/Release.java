@@ -32,6 +32,9 @@ public class Release {
     @Column()
     private String fileName;
 
+    @Column
+    private String fileSize;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -47,11 +50,12 @@ public class Release {
 
     public Release() {}
 
-    public Release(String downloadLink, String episode, LocalDateTime releasedDate, String fileName, AnimeShow animeShow) {
+    public Release(String downloadLink, String episode, LocalDateTime releasedDate, String fileName, String fileSize, AnimeShow animeShow) {
         this.downloadLink = downloadLink;
         this.episode = episode;
         this.releasedDate = releasedDate;
         this.fileName = fileName;
+        this.fileSize = fileSize;
         this.animeShow = animeShow;
     }
 
@@ -93,6 +97,14 @@ public class Release {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(String fileSize) {
+        this.fileSize = fileSize;
     }
 
     public LocalDateTime getCreatedAt() {

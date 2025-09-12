@@ -9,6 +9,7 @@ public record ReleaseInfoResponse(
         String releaseDownloadLink,
         String episode,
         String fileName,
+        String fileSize,
         String imgUrl,
         LocalDateTime releasedDate,
         Boolean tracked

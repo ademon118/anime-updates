@@ -9,6 +9,7 @@ public interface ReleaseInfoDTO {
     String getReleaseDownloadLink();
     String getEpisode();
     String getFileName();
+    String getFileSize();
     String getImgUrl();
     LocalDateTime getReleasedDate();
     Integer getTracked(); // raw 0/1 from MySQL

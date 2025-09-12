@@ -24,6 +24,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
             r.download_link AS releaseDownloadLink,
             r.episode AS episode,
             r.file_name AS fileName,
+            r.file_size AS fileSize,
             ans.image_url AS imgUrl,
             r.created_at as releasedDate,
             CASE
@@ -51,6 +52,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         r.download_link AS releaseDownloadLink,
         r.episode AS episode,
         r.file_name AS fileName,
+        r.file_size AS fileSize,
         ans.image_url AS imgUrl,
         r.created_at as releasedDate,
         FALSE AS tracked
@@ -70,6 +72,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         re.download_link AS releaseDownloadLink,
         re.episode AS episode,
         re.file_name AS fileName,
+        re.file_size AS fileSize,
         sh.image_url AS imgUrl,
         re.created_at AS releasedDate,
         TRUE AS tracked
@@ -98,6 +101,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
             r.download_link AS releaseDownloadLink,
             r.episode AS episode,
             r.file_name AS fileName,
+            r.file_size AS fileSize,
             ans.image_url AS imgUrl,
             r.created_at as releasedDate,
             CASE
@@ -132,6 +136,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
             r.download_link AS releaseDownloadLink,
             r.episode AS episode,
             r.file_name AS fileName,
+            r.file_size AS fileSize,
             ans.image_url AS imgUrl,
             r.created_at as releasedDate,
             CASE

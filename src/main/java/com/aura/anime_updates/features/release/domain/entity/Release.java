@@ -3,6 +3,7 @@ package com.aura.anime_updates.features.release.domain.entity;
 import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.Builder;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

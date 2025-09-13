@@ -6,10 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
 
-    AnimeShow findByTitle(String title);
+    Optional<AnimeShow> findByTitle(String title);
 
     //All list without pagination
     List<AnimeShow> findAllByOrderByCreatedAtDesc();

@@ -28,7 +28,7 @@ public class AndroidAppVersionCheckService {
     private String getLatestVersion() {
         try {
             Path latestApp = Files.readSymbolicLink(Path.of(symLinkPath));
-            return latestApp.getFileName().toString().replaceAll("anime-updates-v([\\\\d\\\\.]+)\\\\.apk", "$1");
+            return latestApp.getFileName().toString().replaceAll("anime-updates-v([\\d.]+)\\.apk", "$1");
         } catch (IOException e) {
             log.error("Failed to check latest file name with error: {}", e.getMessage());
         }

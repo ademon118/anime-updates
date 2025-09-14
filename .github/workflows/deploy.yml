@@ -37,6 +37,15 @@ jobs:
       - name: Copy JAR to root for scp
         run: cp build/libs/anime-updates-test.jar ./anime-updates-test.jar
 
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
       - name: Upload JAR via rsync
         run: |
           rsync -avz --progress --partial \

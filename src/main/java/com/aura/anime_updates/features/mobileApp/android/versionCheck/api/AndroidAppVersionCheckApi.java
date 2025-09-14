@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/android/app-version")
+@RequestMapping("/api/android/app-version")
 @RequiredArgsConstructor
 public class AndroidAppVersionCheckApi {
 

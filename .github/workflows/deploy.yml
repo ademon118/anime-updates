@@ -37,15 +37,12 @@ jobs:
       - name: Copy JAR to root for scp
         run: cp build/libs/anime-updates-test.jar ./anime-updates-test.jar
 
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          port: ${{ secrets.EC2_PORT }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "anime-updates-test.jar"
-          target: "/opt/anime-updates/"
+      - name: Upload JAR via rsync
+        run: |
+          rsync -avz --progress --partial \
+            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.EC2_PORT }}" \
+            ./anime-updates-test.jar \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:"/opt/anime-updates/"
 
       - name: Restart systemd service
         uses: appleboy/ssh-action@v1.0.0

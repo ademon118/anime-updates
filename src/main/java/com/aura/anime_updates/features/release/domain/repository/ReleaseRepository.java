@@ -1,5 +1,6 @@
 package com.aura.anime_updates.features.release.domain.repository;
 
+import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
 import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.features.release.domain.dto.ReleaseInfoDTO;
 import com.aura.anime_updates.features.release.domain.entity.Release;
@@ -15,6 +16,8 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     boolean existsByDownloadLink(String downloadLink);
 
     boolean existsByFileName(String fileName);
+
+    Optional<Release> findByEpisodeAndAnimeShow(String episode, AnimeShow animeShow);
 
     @Query(value = """
         SELECT

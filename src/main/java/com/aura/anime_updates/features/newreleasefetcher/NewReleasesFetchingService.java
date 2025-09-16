@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,18 +50,27 @@ public class NewReleasesFetchingService {
                         );
                     });
 
-            Long releaseId = releaseRepository.save(
-                    new Release(
-                            entry.downloadLink(),
-                            entry.episode(),
-                            entry.releasedDate(),
-                            entry.fileName(),
-                            entry.fileSize(),
-                            animeShow
-                    )
-            ).getId();
 
-            publisher.publishEvent(new NewReleaseEvent(this, releaseId, entry.episode(), animeShow.getId(), entry.imageUrl()));
+            Optional<Release> release = releaseRepository.findByEpisodeAndAnimeShow(entry.episode(), animeShow);
+
+            if(release.isPresent()) {
+                release.get().setDownloadLink(entry.downloadLink());
+                release.get().setReleasedDate(entry.releasedDate());
+                release.get().setFileName(entry.fileName());
+                release.get().setFileSize(entry.fileSize());
+                releaseRepository.save(release.get());
+            }else {
+              Long releaseId =  releaseRepository.save(
+                        new Release(
+                                entry.downloadLink(),
+                                entry.episode(),
+                                entry.releasedDate(),
+                                entry.fileName(),
+                                entry.fileSize(),
+                                animeShow
+                        )).getId();
+                publisher.publishEvent(new NewReleaseEvent(this, releaseId, entry.episode(), animeShow.getId(), entry.imageUrl()));
+            }
 
         } catch (Exception e) {
             log.error("Failed to save a release with error : {}", e.getMessage());

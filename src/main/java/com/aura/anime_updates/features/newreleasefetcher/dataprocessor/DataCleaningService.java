@@ -50,7 +50,13 @@ public class DataCleaningService {
 
     private String transformEpisode (String rawTitle) {
         Matcher matcher = episodePatternRegex.matcher(rawTitle);
-        return matcher.find() ? matcher.group(1) : null;
+        String episode =  matcher.find() ? matcher.group(1) : null;
+
+        if(episode.contains("v")) {
+            episode= episode.split("(?i)v")[0];
+        }
+
+        return episode;
     }
 
     private String transformAnimeShowTitle(String category) {

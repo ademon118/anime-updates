@@ -53,7 +53,7 @@ public class NewReleasesFetchingService {
 
             Optional<Release> release = releaseRepository.findByEpisodeAndAnimeShow(entry.episode(), animeShow);
 
-            if(release.isPresent()) {
+            if(release.isPresent() && (entry.isNewVersionRelease() == Boolean.TRUE)) {
                 release.get().setDownloadLink(entry.downloadLink());
                 release.get().setReleasedDate(entry.releasedDate());
                 release.get().setFileName(entry.fileName());

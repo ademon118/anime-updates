@@ -29,6 +29,7 @@ public class DataCleaningService {
             transformedEntries.add(
                     TransformedEntry.builder()
                             .animeShowName(transformAnimeShowTitle(entry.category()))
+                            .isNewVersionRelease(isNewVersionRelease(transformEpisode(entry.title())))
                             .episode(transformEpisode(entry.title()))
                             .downloadLink(entry.link())
                             .fileSize(entry.size())
@@ -50,12 +51,11 @@ public class DataCleaningService {
 
     private String transformEpisode (String rawTitle) {
         Matcher matcher = episodePatternRegex.matcher(rawTitle);
-        String episode =  matcher.find() ? matcher.group(1) : null;
+        String episode = matcher.find() ? matcher.group(1) : null;
 
-        if(episode.contains("v")) {
-            episode= episode.split("(?i)v")[0];
+        if(isNewVersionRelease(episode)) {
+            return episode.split("(?i)v")[0];
         }
-
         return episode;
     }
 
@@ -65,5 +65,12 @@ public class DataCleaningService {
 
     private LocalDateTime transformPublishedDate(Date releasedDate) {
         return releasedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
+    private boolean isNewVersionRelease(String episode) {
+        if (episode != null) {
+            return episode.contains("v");
+        }
+        return false;
     }
 }

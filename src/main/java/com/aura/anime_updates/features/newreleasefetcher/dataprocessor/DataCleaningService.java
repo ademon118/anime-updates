@@ -30,7 +30,7 @@ public class DataCleaningService {
                     TransformedEntry.builder()
                             .animeShowName(transformAnimeShowTitle(entry.category()))
                             .isNewVersionRelease(isNewVersionRelease(transformEpisode(entry.title())))
-                            .episode(transformEpisode(entry.title()))
+                            .episode(transformVersionedEpisode(transformEpisode(entry.title())))
                             .downloadLink(entry.link())
                             .fileSize(entry.size())
                             .fileName(entry.title())
@@ -51,8 +51,10 @@ public class DataCleaningService {
 
     private String transformEpisode (String rawTitle) {
         Matcher matcher = episodePatternRegex.matcher(rawTitle);
-        String episode = matcher.find() ? matcher.group(1) : null;
+        return matcher.find() ? matcher.group(1) : null;
+    }
 
+    private String transformVersionedEpisode (String episode) {
         if(isNewVersionRelease(episode)) {
             return episode.split("(?i)v")[0];
         }

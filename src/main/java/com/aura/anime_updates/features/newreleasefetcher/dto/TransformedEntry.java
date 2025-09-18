@@ -12,5 +12,6 @@ public record TransformedEntry (
         String fileSize,
         LocalDateTime releasedDate,
         String fileName,
-        String imageUrl
+        String imageUrl,
+        boolean isNewVersionRelease
 ) {}

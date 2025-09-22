@@ -14,7 +14,6 @@ import java.util.List;
 public class DataValidationService {
 
     private final ReleaseRepository releaseRepository;
-    private final DataProcessingUtils dataProcessingUtils;
 
     private boolean validateRSSEntryIntegrity(RSSEntry entry) {
         return entry.title() != null &&
@@ -29,9 +28,9 @@ public class DataValidationService {
 
     private boolean validateDeprecatedEntry(RSSEntry entry) {
         return !releaseRepository.newerVersionExists(
-                dataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()),
-                dataProcessingUtils.getEpisodeFromRawTitle(entry.title()),
-                dataProcessingUtils.getReleaseVersionFromRawTitle(entry.title())
+                DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()),
+                DataProcessingUtils.getEpisodeFromRawTitle(entry.title()),
+                DataProcessingUtils.getReleaseVersionFromRawTitle(entry.title())
         );
     }
 

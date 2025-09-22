@@ -22,21 +22,20 @@ import java.util.regex.Pattern;
 public class DataCleaningService {
 
     private final ImageFetchingService imageFetcher;
-    private final DataProcessingUtils dataProcessingUtils;
 
     public List<TransformedEntry> cleanAndTransformEntries(List<RSSEntry> entries) {
         List<TransformedEntry> transformedEntries = new ArrayList<>();
         entries.forEach(entry -> {
             transformedEntries.add(
                     TransformedEntry.builder()
-                            .animeShowName(dataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()))
-                            .episode(dataProcessingUtils.getEpisodeFromRawTitle(entry.title()))
-                            .releaseVersion(dataProcessingUtils.getReleaseVersionFromRawTitle(entry.title()))
+                            .animeShowName(DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()))
+                            .episode(DataProcessingUtils.getEpisodeFromRawTitle(entry.title()))
+                            .releaseVersion(DataProcessingUtils.getReleaseVersionFromRawTitle(entry.title()))
                             .downloadLink(entry.link())
                             .fileSize(entry.size())
                             .fileName(entry.title())
                             .releasedDate(transformPublishedDate(entry.publishedDate()))
-                            .imageUrl(imageFetcher.fetchImageForAnimeShow(dataProcessingUtils.getAnimeShowTitleFromCategory(entry.category())))
+                            .imageUrl(imageFetcher.fetchImageForAnimeShow(DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category())))
                             .build()
             );
 

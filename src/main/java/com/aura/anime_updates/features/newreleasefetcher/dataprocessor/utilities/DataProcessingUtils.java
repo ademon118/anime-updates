@@ -5,10 +5,10 @@ import java.util.regex.Pattern;
 
 public class DataProcessingUtils {
 
-    Pattern episodeRegexPattern = Pattern.compile(".*-\\s*([^\\(\\s]+)\\s*\\(1080p\\)");
-    Pattern episodeVersionRegexPattern = Pattern.compile("-\\s*(\\d+)(?:v(\\d+))?\\s*\\(");
+    private static final Pattern episodeRegexPattern = Pattern.compile(".*-\\s*([^\\(\\s]+)\\s*\\(1080p\\)");
+    private static final Pattern episodeVersionRegexPattern = Pattern.compile("-\\s*(\\d+)(?:v(\\d+))?\\s*\\(");
 
-    public Integer getReleaseVersionFromRawTitle(String rawTitle) {
+    public static Integer getReleaseVersionFromRawTitle(String rawTitle) {
         Matcher matcher = episodeVersionRegexPattern.matcher(rawTitle);
 
         if (matcher.find()) {
@@ -19,12 +19,12 @@ public class DataProcessingUtils {
         return 1;
     }
 
-    public String getEpisodeFromRawTitle (String rawTitle) {
-        Matcher matcher = episodeVersionRegexPattern.matcher(rawTitle);
+    public static String getEpisodeFromRawTitle (String rawTitle) {
+        Matcher matcher = episodeRegexPattern.matcher(rawTitle);
         return matcher.find() ? matcher.group(1) : null;
     }
 
-    public String getAnimeShowTitleFromCategory(String category) {
+    public static String getAnimeShowTitleFromCategory(String category) {
         return category.replaceAll("\\s*-\\s*1080", "").trim();
     }
 }

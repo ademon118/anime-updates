@@ -22,7 +22,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     @Query(value = """
         SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
         FROM releases r
-        JOIN anime_shows s ON r.anime_show_id = s.id
+        JOIN anime_shows s ON r.anime_shows_id = s.id
         WHERE s.title = :title
         AND r.episode = :episode
         AND r.release_version > :version
@@ -47,7 +47,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 WHEN :userId IS NOT NULL
                     AND EXISTS (
                         SELECT 1 FROM user_tracked_shows t
-                        WHERE ans.id = t.anime_show_id AND t.user_id = :userId
+                        WHERE ans.id = t.anime_shows_id AND t.user_id = :userId
                         )
                 THEN TRUE
                 ELSE FALSE
@@ -93,7 +93,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         re.created_at AS releasedDate,
         TRUE AS tracked
     FROM user_tracked_shows tr
-    JOIN anime_shows sh ON tr.anime_show_id = sh.id
+    JOIN anime_shows sh ON tr.anime_shows_id = sh.id
     JOIN releases re ON sh.id = re.anime_shows_id
     WHERE tr.user_id = :userId
     ORDER BY re.created_at DESC
@@ -101,7 +101,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
             countQuery = """
             SELECT COUNT(*)
             FROM user_tracked_shows tr
-            JOIN anime_shows sh ON tr.anime_show_id = sh.id
+            JOIN anime_shows sh ON tr.anime_shows_id = sh.id
             JOIN releases re ON sh.id = re.anime_shows_id
             WHERE tr.user_id = :userId
             """,
@@ -124,7 +124,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 WHEN :userId IS NOT NULL
                     AND EXISTS (
                         SELECT 1 FROM user_tracked_shows t
-                        WHERE ans.id = t.anime_show_id AND t.user_id = :userId
+                        WHERE ans.id = t.anime_shows_id AND t.user_id = :userId
                         )
                 THEN TRUE
                 ELSE FALSE
@@ -159,7 +159,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 WHEN :userId IS NOT NULL
                     AND EXISTS (
                         SELECT 1 FROM user_tracked_shows t
-                        WHERE ans.id = t.anime_show_id AND t.user_id = :userId
+                        WHERE ans.id = t.anime_shows_id AND t.user_id = :userId
                         )
                 THEN TRUE
                 ELSE FALSE

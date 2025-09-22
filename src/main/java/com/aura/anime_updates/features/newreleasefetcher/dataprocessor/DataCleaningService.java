@@ -1,5 +1,6 @@
 package com.aura.anime_updates.features.newreleasefetcher.dataprocessor;
 
+import com.aura.anime_updates.features.newreleasefetcher.dataprocessor.utilities.DataProcessingUtils;
 import com.aura.anime_updates.features.newreleasefetcher.dto.RSSEntry;
 import com.aura.anime_updates.features.newreleasefetcher.dto.TransformedEntry;
 import com.aura.anime_updates.features.newreleasefetcher.imagefetcher.ImageFetchingService;
@@ -21,21 +22,21 @@ import java.util.regex.Pattern;
 public class DataCleaningService {
 
     private final ImageFetchingService imageFetcher;
-    Pattern episodePatternRegex = Pattern.compile(".*-\\s*([^\\(\\s]+)\\s*\\(1080p\\)");
+    private final DataProcessingUtils dataProcessingUtils;
 
     public List<TransformedEntry> cleanAndTransformEntries(List<RSSEntry> entries) {
         List<TransformedEntry> transformedEntries = new ArrayList<>();
         entries.forEach(entry -> {
             transformedEntries.add(
                     TransformedEntry.builder()
-                            .animeShowName(transformAnimeShowTitle(entry.category()))
-                            .isNewVersionRelease(isNewVersionRelease(transformEpisode(entry.title())))
-                            .episode(transformVersionedEpisode(transformEpisode(entry.title())))
+                            .animeShowName(dataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()))
+                            .episode(dataProcessingUtils.getEpisodeFromRawTitle(entry.title()))
+                            .releaseVersion(dataProcessingUtils.getReleaseVersionFromRawTitle(entry.title()))
                             .downloadLink(entry.link())
                             .fileSize(entry.size())
                             .fileName(entry.title())
                             .releasedDate(transformPublishedDate(entry.publishedDate()))
-                            .imageUrl(imageFetcher.fetchImageForAnimeShow(transformAnimeShowTitle(entry.category())))
+                            .imageUrl(imageFetcher.fetchImageForAnimeShow(dataProcessingUtils.getAnimeShowTitleFromCategory(entry.category())))
                             .build()
             );
 
@@ -49,30 +50,7 @@ public class DataCleaningService {
         return transformedEntries;
     }
 
-    private String transformEpisode (String rawTitle) {
-        Matcher matcher = episodePatternRegex.matcher(rawTitle);
-        return matcher.find() ? matcher.group(1) : null;
-    }
-
-    private String transformVersionedEpisode (String episode) {
-        if(isNewVersionRelease(episode)) {
-            return episode.split("(?i)v")[0];
-        }
-        return episode;
-    }
-
-    private String transformAnimeShowTitle(String category) {
-        return category.replaceAll("\\s*-\\s*1080", "").trim();
-    }
-
     private LocalDateTime transformPublishedDate(Date releasedDate) {
         return releasedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-    }
-
-    private boolean isNewVersionRelease(String episode) {
-        if (episode != null) {
-            return episode.contains("v");
-        }
-        return false;
     }
 }

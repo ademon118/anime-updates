@@ -20,6 +20,19 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     Optional<Release> findByEpisodeAndAnimeShow(String episode, AnimeShow animeShow);
 
     @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM releases r
+        JOIN anime_shows s ON r.anime_show_id = s.id
+        WHERE s.title = :title
+        AND r.episode = :episode
+        AND r.release_version > :version
+    """, nativeQuery = true)
+    boolean newerVersionExists(@Param("title") String title,
+                               @Param("episode") String episode,
+                               @Param("version") Integer version);
+
+
+    @Query(value = """
         SELECT
             r.id AS releaseId,
             r.anime_shows_id AS animeShowId,

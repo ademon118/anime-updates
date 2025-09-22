@@ -8,10 +8,10 @@ import java.time.LocalDateTime;
 public record TransformedEntry (
         String animeShowName,
         String episode,
+        Integer releaseVersion,
         String downloadLink,
         String fileSize,
         LocalDateTime releasedDate,
         String fileName,
-        String imageUrl,
-        boolean isNewVersionRelease
+        String imageUrl
 ) {}

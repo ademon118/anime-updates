@@ -50,27 +50,18 @@ public class NewReleasesFetchingService {
                         );
                     });
 
+            Long releaseId =  releaseRepository.save(
+                    new Release(
+                            entry.downloadLink(),
+                            entry.episode(),
+                            entry.releaseVersion(),
+                            entry.releasedDate(),
+                            entry.fileName(),
+                            entry.fileSize(),
+                            animeShow
+                    )).getId();
 
-            Optional<Release> release = releaseRepository.findByEpisodeAndAnimeShow(entry.episode(), animeShow);
-
-            if(release.isPresent() && (entry.isNewVersionRelease() == Boolean.TRUE)) {
-                release.get().setDownloadLink(entry.downloadLink());
-                release.get().setReleasedDate(entry.releasedDate());
-                release.get().setFileName(entry.fileName());
-                release.get().setFileSize(entry.fileSize());
-                releaseRepository.save(release.get());
-            }else {
-              Long releaseId =  releaseRepository.save(
-                        new Release(
-                                entry.downloadLink(),
-                                entry.episode(),
-                                entry.releasedDate(),
-                                entry.fileName(),
-                                entry.fileSize(),
-                                animeShow
-                        )).getId();
-                publisher.publishEvent(new NewReleaseEvent(this, releaseId, entry.episode(), animeShow.getId(), entry.imageUrl()));
-            }
+            publisher.publishEvent(new NewReleaseEvent(this, releaseId, entry.episode(), animeShow.getId(), entry.imageUrl()));
 
         } catch (Exception e) {
             log.error("Failed to save a release with error : {}", e.getMessage());

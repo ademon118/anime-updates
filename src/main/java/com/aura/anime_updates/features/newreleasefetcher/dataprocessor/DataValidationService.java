@@ -27,13 +27,12 @@ public class DataValidationService {
     }
 
     private boolean validateDeprecatedEntry(RSSEntry entry) {
-        return !releaseRepository.newerVersionExists(
+        return releaseRepository.newerVersionExists(
                 DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()),
                 DataProcessingUtils.getEpisodeFromRawTitle(entry.title()),
                 DataProcessingUtils.getReleaseVersionFromRawTitle(entry.title())
-        );
+        ) == 0;
     }
-
 
     private List<RSSEntry> filterInvalidEntries(List<RSSEntry> entries) {
         return entries.stream()

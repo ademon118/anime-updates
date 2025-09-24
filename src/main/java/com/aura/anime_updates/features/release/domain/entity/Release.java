@@ -48,7 +48,7 @@ public class Release {
 
     @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "animeShowsId", nullable = false)
+    @JoinColumn(name = "animeShowId", nullable = false)
     private AnimeShow animeShow;
 
     public Release() {}

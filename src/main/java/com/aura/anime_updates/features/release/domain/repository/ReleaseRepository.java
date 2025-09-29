@@ -1,5 +1,6 @@
 package com.aura.anime_updates.features.release.domain.repository;
 
+import com.aura.anime_updates.features.animeShow.domain.entity.AnimeShow;
 import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.features.release.domain.dto.ReleaseInfoDTO;
 import com.aura.anime_updates.features.release.domain.entity.Release;
@@ -16,10 +17,25 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
 
     boolean existsByFileName(String fileName);
 
+    Optional<Release> findByEpisodeAndAnimeShow(String episode, AnimeShow animeShow);
+
+    @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM releases r
+        JOIN anime_shows s ON r.anime_show_id = s.id
+        WHERE s.title = :title
+        AND r.episode = :episode
+        AND r.release_version > :version
+    """, nativeQuery = true)
+    Long newerVersionExists(@Param("title") String title,
+                               @Param("episode") String episode,
+                               @Param("version") Integer version);
+
+
     @Query(value = """
         SELECT
             r.id AS releaseId,
-            r.anime_shows_id AS animeShowId,
+            r.anime_show_id AS animeShowId,
             ans.title AS showTitle,
             r.download_link AS releaseDownloadLink,
             r.episode AS episode,
@@ -37,7 +53,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 ELSE FALSE
             END AS tracked
         FROM releases r
-        JOIN anime_shows ans ON ans.id = r.anime_shows_id
+        JOIN anime_shows ans ON ans.id = r.anime_show_id
         ORDER BY r.created_at DESC
         """,
             countQuery = "SELECT COUNT(*) FROM releases r",
@@ -47,7 +63,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     @Query(value = """
     SELECT 
         r.id AS releaseId, 
-        r.anime_shows_id AS animeShowId,
+        r.anime_show_id AS animeShowId,
         ans.title AS showTitle,
         r.download_link AS releaseDownloadLink,
         r.episode AS episode,
@@ -57,7 +73,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         r.created_at as releasedDate,
         FALSE AS tracked
     FROM releases r
-    JOIN anime_shows ans ON ans.id = r.anime_shows_id
+    JOIN anime_shows ans ON ans.id = r.anime_show_id
     WHERE r.id = :id
     """,
             nativeQuery = true)
@@ -67,7 +83,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     @Query(value = """
     SELECT
         re.id AS releaseId,
-        re.anime_shows_id AS animeShowId,
+        re.anime_show_id AS animeShowId,
         sh.title AS showTitle,
         re.download_link AS releaseDownloadLink,
         re.episode AS episode,
@@ -78,7 +94,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
         TRUE AS tracked
     FROM user_tracked_shows tr
     JOIN anime_shows sh ON tr.anime_show_id = sh.id
-    JOIN releases re ON sh.id = re.anime_shows_id
+    JOIN releases re ON sh.id = re.anime_show_id
     WHERE tr.user_id = :userId
     ORDER BY re.created_at DESC
     """,
@@ -86,7 +102,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
             SELECT COUNT(*)
             FROM user_tracked_shows tr
             JOIN anime_shows sh ON tr.anime_show_id = sh.id
-            JOIN releases re ON sh.id = re.anime_shows_id
+            JOIN releases re ON sh.id = re.anime_show_id
             WHERE tr.user_id = :userId
             """,
             nativeQuery = true)
@@ -96,7 +112,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     @Query(value= """
      SELECT
             r.id AS releaseId,
-            r.anime_shows_id AS animeShowId,
+            r.anime_show_id AS animeShowId,
             ans.title AS showTitle,
             r.download_link AS releaseDownloadLink,
             r.episode AS episode,
@@ -114,13 +130,13 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 ELSE FALSE
             END AS tracked
         FROM releases r
-        JOIN anime_shows ans ON ans.id = :animeShowId AND (ans.id = r.anime_shows_id)
+        JOIN anime_shows ans ON ans.id = :animeShowId AND (ans.id = r.anime_show_id)
         ORDER BY r.created_at DESC
      """,
             countQuery = """
                     SELECT COUNT(*)
                     FROM releases
-                    WHERE anime_shows_id = :animeShowId
+                    WHERE anime_show_id = :animeShowId
                     """,
             nativeQuery = true
     )
@@ -131,7 +147,7 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
     @Query(value = """
         SELECT
             r.id AS releaseId,
-            r.anime_shows_id AS animeShowId,
+            r.anime_show_id AS animeShowId,
             ans.title AS showTitle,
             r.download_link AS releaseDownloadLink,
             r.episode AS episode,
@@ -149,13 +165,13 @@ public interface ReleaseRepository extends JpaRepository<Release, Long> {
                 ELSE FALSE
             END AS tracked
         FROM releases r
-        JOIN anime_shows ans ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT('%', :searchText, '%')
+        JOIN anime_shows ans ON (ans.id = r.anime_show_id) AND ans.title LIKE CONCAT('%', :searchText, '%')
         ORDER BY r.created_at DESC
         """,
             countQuery = """
                     SELECT COUNT(*) FROM releases r
                     JOIN anime_shows ans
-                    ON (ans.id = r.anime_shows_id) AND ans.title LIKE CONCAT('%', :searchText, '%')
+                    ON (ans.id = r.anime_show_id) AND ans.title LIKE CONCAT('%', :searchText, '%')
                     """,
             nativeQuery = true)
     Page<ReleaseInfoDTO> getReleaseInfoWithSearchText(Pageable pageable,

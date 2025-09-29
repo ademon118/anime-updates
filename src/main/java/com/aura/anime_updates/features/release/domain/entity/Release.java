@@ -27,6 +27,9 @@ public class Release {
     private String episode;
 
     @Column()
+    private Integer releaseVersion;
+
+    @Column()
     private LocalDateTime releasedDate;
 
     @Column()
@@ -45,14 +48,15 @@ public class Release {
 
     @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "animeShowsId", nullable = false)
+    @JoinColumn(name = "animeShowId", nullable = false)
     private AnimeShow animeShow;
 
     public Release() {}
 
-    public Release(String downloadLink, String episode, LocalDateTime releasedDate, String fileName, String fileSize, AnimeShow animeShow) {
+    public Release(String downloadLink, String episode, Integer releaseVersion, LocalDateTime releasedDate, String fileName, String fileSize, AnimeShow animeShow) {
         this.downloadLink = downloadLink;
         this.episode = episode;
+        this.releaseVersion = releaseVersion;
         this.releasedDate = releasedDate;
         this.fileName = fileName;
         this.fileSize = fileSize;
@@ -81,6 +85,14 @@ public class Release {
 
     public void setEpisode(String episode) {
         this.episode = episode;
+    }
+
+    public Integer getReleaseVersion() {
+        return releaseVersion;
+    }
+
+    public void setReleaseVersion(Integer releaseVersion) {
+        this.releaseVersion = releaseVersion;
     }
 
     public LocalDateTime getReleasedDate() {

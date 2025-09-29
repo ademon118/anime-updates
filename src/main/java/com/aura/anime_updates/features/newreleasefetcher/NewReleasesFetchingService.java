@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,16 +50,16 @@ public class NewReleasesFetchingService {
                         );
                     });
 
-            Long releaseId = releaseRepository.save(
+            Long releaseId =  releaseRepository.save(
                     new Release(
                             entry.downloadLink(),
                             entry.episode(),
+                            entry.releaseVersion(),
                             entry.releasedDate(),
                             entry.fileName(),
                             entry.fileSize(),
                             animeShow
-                    )
-            ).getId();
+                    )).getId();
 
             publisher.publishEvent(new NewReleaseEvent(this, releaseId, entry.episode(), animeShow.getId(), entry.imageUrl()));
 

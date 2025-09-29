@@ -31,7 +31,10 @@ public class User {
     @JoinTable(
             name = "user_tracked_shows",
             joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "anime_show_id")
+            inverseJoinColumns = @JoinColumn(name = "anime_show_id"),
+            uniqueConstraints = {
+                    @UniqueConstraint(columnNames = {"anime_show_id", "user_id"})
+            }
     )
     private List<AnimeShow> trackedShows;
 

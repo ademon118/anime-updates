@@ -1,5 +1,6 @@
 package com.aura.anime_updates.features.newreleasefetcher.dataprocessor;
 
+import com.aura.anime_updates.features.newreleasefetcher.dataprocessor.utilities.DataProcessingUtils;
 import com.aura.anime_updates.features.newreleasefetcher.dto.RSSEntry;
 import com.aura.anime_updates.features.newreleasefetcher.dto.TransformedEntry;
 import com.aura.anime_updates.features.newreleasefetcher.imagefetcher.ImageFetchingService;
@@ -21,20 +22,20 @@ import java.util.regex.Pattern;
 public class DataCleaningService {
 
     private final ImageFetchingService imageFetcher;
-    Pattern episodePatternRegex = Pattern.compile(".*-\\s*([^\\(\\s]+)\\s*\\(1080p\\)");
 
     public List<TransformedEntry> cleanAndTransformEntries(List<RSSEntry> entries) {
         List<TransformedEntry> transformedEntries = new ArrayList<>();
         entries.forEach(entry -> {
             transformedEntries.add(
                     TransformedEntry.builder()
-                            .animeShowName(transformAnimeShowTitle(entry.category()))
-                            .episode(transformEpisode(entry.title()))
+                            .animeShowName(DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()))
+                            .episode(DataProcessingUtils.getEpisodeFromRawTitle(entry.title()))
+                            .releaseVersion(DataProcessingUtils.getReleaseVersionFromRawTitle(entry.title()))
                             .downloadLink(entry.link())
                             .fileSize(entry.size())
                             .fileName(entry.title())
                             .releasedDate(transformPublishedDate(entry.publishedDate()))
-                            .imageUrl(imageFetcher.fetchImageForAnimeShow(transformAnimeShowTitle(entry.category())))
+                            .imageUrl(imageFetcher.fetchImageForAnimeShow(DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category())))
                             .build()
             );
 
@@ -46,15 +47,6 @@ public class DataCleaningService {
 
         });
         return transformedEntries;
-    }
-
-    private String transformEpisode (String rawTitle) {
-        Matcher matcher = episodePatternRegex.matcher(rawTitle);
-        return matcher.find() ? matcher.group(1) : null;
-    }
-
-    private String transformAnimeShowTitle(String category) {
-        return category.replaceAll("\\s*-\\s*1080", "").trim();
     }
 
     private LocalDateTime transformPublishedDate(Date releasedDate) {

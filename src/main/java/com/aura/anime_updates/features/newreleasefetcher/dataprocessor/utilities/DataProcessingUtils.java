@@ -7,6 +7,7 @@ public class DataProcessingUtils {
 
     private static final Pattern episodeRegexPattern = Pattern.compile(".*-\\s*([^\\(\\s]+)\\s*\\(1080p\\)");
     private static final Pattern episodeVersionRegexPattern = Pattern.compile("-\\s*(\\d+)(?:v(\\d+))?\\s*\\(");
+    private static final Pattern batchReleaseRegexPattern = Pattern.compile(".*\\[Batch\\]$", Pattern.CASE_INSENSITIVE);
 
     public static Integer getReleaseVersionFromRawTitle(String rawTitle) {
         Matcher matcher = episodeVersionRegexPattern.matcher(rawTitle);
@@ -26,5 +27,9 @@ public class DataProcessingUtils {
 
     public static String getAnimeShowTitleFromCategory(String category) {
         return category.replaceAll("\\s*-\\s*1080", "").trim();
+    }
+
+    public static boolean isBatchRelease(String rawTitle) {
+        return rawTitle != null && batchReleaseRegexPattern.matcher(rawTitle.trim()).matches();
     }
 }

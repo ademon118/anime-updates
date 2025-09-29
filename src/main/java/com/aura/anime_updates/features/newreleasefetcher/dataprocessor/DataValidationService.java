@@ -34,11 +34,16 @@ public class DataValidationService {
         ) == 0;
     }
 
+    private boolean validateNonBatchReleases(RSSEntry entry) {
+        return !DataProcessingUtils.isBatchRelease(entry.title());
+    }
+
     private List<RSSEntry> filterInvalidEntries(List<RSSEntry> entries) {
         return entries.stream()
                 .filter(this::validateRSSEntryIntegrity)
                 .filter(this::validateNonNewEntry)
                 .filter(this::validateDeprecatedEntry)
+                .filter(this::validateNonBatchReleases)
                 .toList();
     }
 

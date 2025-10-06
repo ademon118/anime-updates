@@ -31,7 +31,7 @@ public class DataValidationService {
                 DataProcessingUtils.getAnimeShowTitleFromCategory(entry.category()),
                 DataProcessingUtils.getEpisodeFromRawTitle(entry.title()),
                 DataProcessingUtils.getReleaseVersionFromRawTitle(entry.title())
-        ) == 0;
+        ).compareTo(0L) == 0;
     }
 
     private boolean validateNonBatchReleases(RSSEntry entry) {

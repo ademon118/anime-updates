@@ -67,7 +67,7 @@ public class NewReleasesFetchingService {
             newRelease.setFileSize(entry.fileSize());
 
             releaseRepository.saveAndFlush(newRelease);
-
+            //TODO: Don't send notis for new version releases
             publisher.publishEvent(new NewReleaseEvent(this, newRelease.getId(), newRelease.getEpisode(), animeShow.getId(), animeShow.getImageUrl()));
 
         } catch (Exception e) {

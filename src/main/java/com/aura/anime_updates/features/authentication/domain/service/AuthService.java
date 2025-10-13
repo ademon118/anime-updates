@@ -4,6 +4,7 @@ import com.aura.anime_updates.features.authentication.api.request.AuthRequest;
 import com.aura.anime_updates.features.authentication.api.request.LogoutRequest;
 import com.aura.anime_updates.features.authentication.api.response.AuthResponse;
 import com.aura.anime_updates.features.authentication.domain.entity.RefreshToken;
+import com.aura.anime_updates.features.authentication.domain.exceptions.InvalidCredentialsException;
 import com.aura.anime_updates.features.authentication.domain.repository.RefreshTokenRepository;
 import com.aura.anime_updates.features.authentication.util.TokenHasher;
 import com.aura.anime_updates.features.fireBaseToken.domain.service.FcmTokenService;
@@ -13,6 +14,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -40,29 +42,33 @@ public class AuthService {
     }
 
     private AuthResponse authenticateAndGenerateTokens(String username, String password) {
-        Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
+        try {
+            Authentication auth = authManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
 
-        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
-        Long userId = principal.getId();
+            CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+            Long userId = principal.getId();
 
-        String refresh = jwt.createRefreshToken(userId);
+            String refresh = jwt.createRefreshToken(userId);
 
-        Jws<Claims> jws = jwt.parse(refresh);
-        String jti = jwt.getJti(jws);
-        Instant exp = jws.getPayload().getExpiration().toInstant();
+            Jws<Claims> jws = jwt.parse(refresh);
+            String jti = jwt.getJti(jws);
+            Instant exp = jws.getPayload().getExpiration().toInstant();
 
-        refreshRepo.save(RefreshToken.builder()
-                .userId(userId)
-                .jti(jti)
-                .tokenHash(hasher.hash(refresh))
-                .createdAt(Instant.now())
-                .expiresAt(exp)
-                .build());
+            refreshRepo.save(RefreshToken.builder()
+                    .userId(userId)
+                    .jti(jti)
+                    .tokenHash(hasher.hash(refresh))
+                    .createdAt(Instant.now())
+                    .expiresAt(exp)
+                    .build());
 
-        String access = jwt.createAccessToken(userId, principal.getUsername(), jti);
-        return new AuthResponse(access, refresh);
+            String access = jwt.createAccessToken(userId, principal.getUsername(), jti);
+            return new AuthResponse(access, refresh);
+        } catch (BadCredentialsException ex) {
+            throw new InvalidCredentialsException("Incorrect username or password");
+        }
     }
 
     public AuthResponse refresh(String rawRefreshToken) {

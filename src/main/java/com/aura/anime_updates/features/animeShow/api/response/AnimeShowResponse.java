@@ -1,10 +1,10 @@
 package com.aura.anime_updates.features.animeShow.api.response;
 
-import lombok.Builder;
+import java.time.LocalDateTime;
 
-@Builder
 public record AnimeShowResponse(
-    Long id,
-    String title,
-    String imageUrl
-) { }
+        Long id,
+        String title,
+        String imageUrl,
+        LocalDateTime latestReleasedTime
+) {}

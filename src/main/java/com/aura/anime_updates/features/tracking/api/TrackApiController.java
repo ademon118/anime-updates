@@ -1,5 +1,7 @@
 package com.aura.anime_updates.features.tracking.api;
 
+import com.aura.anime_updates.features.animeShow.api.response.AnimeShowResponse;
+import com.aura.anime_updates.features.animeShow.domain.service.AnimeShowService;
 import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.features.release.domain.service.ReleaseService;
 import com.aura.anime_updates.features.tracking.domain.service.TrackingService;
@@ -21,10 +23,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/tracking")
 @RequiredArgsConstructor
 @Tag(name = "Tracking", description = "APIs for tracking anime shows and managing tracked releases")
-public class TrackedReleasesApiController {
+public class TrackApiController {
 
     private final ReleaseService releaseService;
     private final TrackingService trackingService;
+    private final AnimeShowService animeShowService;
 
     @Operation(summary = "Get tracked releases", description = "Retrieve paginated list of releases for tracked anime shows")
     @ApiResponses(value = {
@@ -78,6 +81,24 @@ public class TrackedReleasesApiController {
     ) {
         trackingService.unTrackAnimeShow(currentUser.getId(), animeShowId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Get tracked anime shows", description = "Get anime show data for tracked shows by a user in order of newly released shows")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Tracked anime shows retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - valid access token required")
+    })
+    @GetMapping("/get-shows")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<AnimeShowResponse>> getAllTrackedShows (
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0")  Integer page,
+            @Parameter(description = "Number of items per page", example = "10")
+            @RequestParam(defaultValue = "10") Integer size,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        return ResponseEntity.ok(animeShowService.getAllTrackedAnimeShows(page, size, currentUser.getId()));
     }
 
 }

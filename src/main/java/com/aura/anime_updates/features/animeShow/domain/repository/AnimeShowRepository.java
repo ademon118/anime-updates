@@ -19,10 +19,10 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
 
     @Query(value = """
             SELECT
-                sh.id,
-                sh.title,
-                sh.image_url,
-                MAX(r.created_at) AS latest_released_time
+                sh.id AS id,
+                sh.title AS title,
+                sh.image_url AS imageUrl,
+                MAX(r.created_at) AS latestReleasedTime
             FROM anime_shows sh
             JOIN releases r ON sh.id = r.anime_show_id
             JOIN user_tracked_shows tr ON sh.id = tr.anime_show_id

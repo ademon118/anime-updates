@@ -28,7 +28,7 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
             JOIN user_tracked_shows tr ON sh.id = tr.anime_show_id
             WHERE tr.user_id = :userId
             GROUP BY sh.id
-            ORDER BY latest_released_time DESC;
+            ORDER BY latestReleasedTime DESC;
             """, nativeQuery = true)
     Page<AnimeShowResponse> getAllTrackedShowsByUser(Pageable pageable, @Param("userId") Long userId);
 }

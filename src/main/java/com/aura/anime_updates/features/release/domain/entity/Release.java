@@ -154,6 +154,10 @@ public class Release {
                 this.updatedAt
         );
     }
+
+    public boolean isNewVersionRelease() {
+        return this.releaseVersion != 1;
+    }
 }
 
 

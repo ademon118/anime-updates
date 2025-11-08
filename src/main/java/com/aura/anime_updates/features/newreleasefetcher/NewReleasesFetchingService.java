@@ -68,7 +68,7 @@ public class NewReleasesFetchingService {
 
             releaseRepository.saveAndFlush(newRelease);
 
-            if (newRelease.isNewVersionRelease()) {
+            if (!newRelease.isNewVersionRelease()) {
                 publisher.publishEvent(new NewReleaseEvent(this, newRelease.getId(), newRelease.getEpisode(), animeShow.getId(), animeShow.getImageUrl()));
             }
 

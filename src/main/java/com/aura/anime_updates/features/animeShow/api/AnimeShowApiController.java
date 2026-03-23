@@ -35,7 +35,7 @@ public class AnimeShowApiController {
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0")  Integer page,
             @Parameter(description = "Number of items per page", example = "10")
-            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "0") Integer size,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ){
         Long userId = null;

@@ -33,9 +33,6 @@ public class AnimeShowService {
                                                            Long userId) {
         log.info("Fetching tracked anime shows by userId={} with page={} and size={}", userId, page, size);
         Pageable pageable = PageRequest.of(page, size);
-        if (size <= 0) {
-            pageable.isUnpaged();
-        }
         try{
             Page<AnimeShowResponse> trackedAnimeShows = animeShowRepository.getAllTrackedShowsByUser(pageable, userId);
             log.debug("Fetched {} anime shows out of total {}",

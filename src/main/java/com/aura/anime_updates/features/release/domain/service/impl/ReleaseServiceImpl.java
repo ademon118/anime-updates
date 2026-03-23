@@ -63,14 +63,22 @@ public class ReleaseServiceImpl implements ReleaseService {
 
     @Override
     public Page<ReleaseInfoResponse> getReleaseInfoByAnimeShow(Integer page, Integer size, Long animeShowId, Long userId) {
-        log.info("Fetching release infos for anime show id={}", animeShowId);
+        log.info("Fetching release infos for anime show id={} with page={} and size={}", animeShowId, page, size);
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable;
+
+        if (size == null || size <= 0) {
+            pageable = Pageable.unpaged();
+        } else {
+            int pageNumber = (page == null || page < 0) ? 0 : page;
+            pageable = PageRequest.of(pageNumber, size);
+        }
+
         try {
             Page<ReleaseInfoDTO> releases = releaseRepository.getAllReleasesOfAnimeShow(pageable, animeShowId, userId);
-
             return releaseMapper.toResponsePage(releases);
         } catch (Exception e) {
+            log.error("Error fetching releases for show {}: {}", animeShowId, e.getMessage());
             throw new RuntimeException("Database error while fetching releases", e);
         }
     }

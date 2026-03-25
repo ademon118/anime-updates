@@ -31,4 +31,18 @@ public interface AnimeShowRepository extends JpaRepository<AnimeShow, Long> {
             ORDER BY latestReleasedTime DESC;
             """, nativeQuery = true)
     Page<AnimeShowResponse> getAllTrackedShowsByUser(Pageable pageable, @Param("userId") Long userId);
+
+    @Query(value = """
+            SELECT
+                sh.id AS id,
+                sh.title AS title,
+                sh.image_url AS imageUrl,
+                MAX(r.created_at) AS latestReleasedTime
+            FROM anime_shows sh
+            JOIN releases r ON sh.id = r.anime_show_id
+            WHERE title LIKE CONCAT('%', :searchText, '%')
+            GROUP BY sh.id
+            ORDER BY latestReleasedTime DESC;
+            """, nativeQuery = true)
+    Page<AnimeShowResponse> getAnimeShowWithSearchText(Pageable pageable, @Param("searchText") String searchText);
 }

@@ -1,5 +1,6 @@
 package com.aura.anime_updates.features.animeShow.api;
 
+import com.aura.anime_updates.features.animeShow.api.response.AnimeShowResponse;
 import com.aura.anime_updates.features.animeShow.domain.service.AnimeShowService;
 import com.aura.anime_updates.features.release.api.response.ReleaseInfoResponse;
 import com.aura.anime_updates.security.CustomUserDetails;
@@ -43,5 +44,23 @@ public class AnimeShowApiController {
             userId = currentUser.getId();
         }
         return ResponseEntity.ok(animeShowService.getAllReleaseInfoOfAnAnimeShow(page, size, animeShowId, userId));
+    }
+
+    @Operation(summary = "Search anime shows", description = "Retrieve paginated list of searched shows")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Shows retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Anime shows not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters")
+    })
+    @GetMapping("/{searchText}")
+    public ResponseEntity<Page<AnimeShowResponse>> searchAnimeShows(
+            @Parameter(description = "Search string")
+            @PathVariable String searchText,
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0")  Integer page,
+            @Parameter(description = "Number of items per page", example = "10")
+            @RequestParam(defaultValue = "10") Integer size
+    ){
+        return ResponseEntity.ok(animeShowService.searchAnimeShows(page, size, searchText));
     }
 }

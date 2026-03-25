@@ -29,6 +29,15 @@ public class AnimeShowService {
 
     }
 
+    public Page<AnimeShowResponse> searchAnimeShows(Integer page, Integer size, String searchText) {
+        Pageable pageable = PageRequest.of(page, size);
+        try {
+            return animeShowRepository.getAnimeShowWithSearchText(pageable, searchText.toLowerCase());
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Database error while fetching anime shows", e);
+        }
+    }
+
     public Page<AnimeShowResponse> getAllTrackedAnimeShows(Integer page, Integer size,
                                                            Long userId) {
         log.info("Fetching tracked anime shows by userId={} with page={} and size={}", userId, page, size);

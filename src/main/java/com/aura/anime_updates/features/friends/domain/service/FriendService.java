@@ -97,7 +97,7 @@ public class FriendService {
                         currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
 
-        if (!friendship.getRequestSender().getUserName().equals(currentUser.getUserName())) {
+        if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
             throw FriendException.invalidRequestSender(senderUsername);
         }
 
@@ -107,7 +107,7 @@ public class FriendService {
         users.add(sender);
         notificationService.sendNotificationToAllDevicesOfUsers(
                 users,
-                notificationPayloadBuilder.buildFriendRequestAcceptedNotificationPayload(senderUsername),
+                notificationPayloadBuilder.buildFriendRequestAcceptedNotificationPayload(currentUser.getUserName()),
                 null
         );
     }

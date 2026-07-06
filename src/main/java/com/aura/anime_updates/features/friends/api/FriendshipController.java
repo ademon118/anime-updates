@@ -3,7 +3,7 @@ package com.aura.anime_updates.features.friends.api;
 import com.aura.anime_updates.features.friends.api.request.FriendRequestDTO;
 import com.aura.anime_updates.features.friends.api.response.FriendResponseDTO;
 import com.aura.anime_updates.features.friends.domain.service.FriendService;
-import com.aura.anime_updates.features.user.domain.entity.User;
+import com.aura.anime_updates.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -35,9 +35,9 @@ public class FriendshipController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/request")
     public ResponseEntity<String> sendFriendRequest(
-            @AuthenticationPrincipal User currentUser,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody FriendRequestDTO request) {
-        friendService.sendRequest(currentUser, request.username());
+        friendService.sendRequest(currentUser.getId(), request.username());
         return ResponseEntity.ok("Friend request sent successfully.");
     }
 
@@ -51,9 +51,9 @@ public class FriendshipController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/accept")
     public ResponseEntity<String> acceptRequest(
-            @AuthenticationPrincipal User currentUser,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody FriendRequestDTO request) {
-        friendService.accept(currentUser, request.username());
+        friendService.accept(currentUser.getId(), request.username());
         return ResponseEntity.ok("Friend request accepted.");
     }
 
@@ -67,9 +67,9 @@ public class FriendshipController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/decline")
     public ResponseEntity<String> declineRequest(
-            @AuthenticationPrincipal User currentUser,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody FriendRequestDTO request) {
-        friendService.decline(currentUser, request.username());
+        friendService.decline(currentUser.getId(), request.username());
         return ResponseEntity.ok("Friend request declined.");
     }
 
@@ -82,9 +82,9 @@ public class FriendshipController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/remove")
     public ResponseEntity<String> removeFriend(
-            @AuthenticationPrincipal User currentUser,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody FriendRequestDTO request) {
-        friendService.remove(currentUser, request.username());
+        friendService.remove(currentUser.getId(), request.username());
         return ResponseEntity.ok("Friend/Request removed successfully.");
     }
 
@@ -96,7 +96,7 @@ public class FriendshipController {
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping
     public ResponseEntity<List<FriendResponseDTO>> getMyFriends(
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(friendService.getFriendList(currentUser));
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        return ResponseEntity.ok(friendService.getFriendList(currentUser.getId()));
     }
 }

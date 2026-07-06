@@ -26,11 +26,12 @@ public class FriendService {
     private final FriendRequestNotificationPayloadBuilder notificationPayloadBuilder;
 
     @Transactional
-    public void sendRequest(User sender, String receiverUsername) {
+    public void sendRequest(Long senderId, String receiverUsername) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + senderId));
 
         User receiver = userRepository.findByUserName(receiverUsername)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + receiverUsername));
-
 
         if (sender.getId().equals(receiver.getId())) {
             throw new IllegalArgumentException("You cannot send a tomodachi request to yourself.");
@@ -42,7 +43,6 @@ public class FriendService {
         if (friendshipRepository.findByUserOneIdAndUserTwoId(userOne.getId(), userTwo.getId()).isPresent()) {
             throw new IllegalStateException("A tomodachi request already exists or you are already tomodachi.");
         }
-
 
         Friendship friendship = Friendship.builder()
                 .userOne(userOne)
@@ -58,7 +58,10 @@ public class FriendService {
     }
 
     @Transactional
-    public void remove(User remover, String targetUserUsername) {
+    public void remove(Long removerId, String targetUserUsername) {
+        User remover = userRepository.findById(removerId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + removerId));
+
         User target = userRepository.findByUserName(targetUserUsername)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + targetUserUsername));
 
@@ -72,12 +75,15 @@ public class FriendService {
     }
 
     @Transactional
-    public void accept(User currentUser, String senderUsername) {
+    public void accept(Long currentUserId, String senderUsername) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + currentUserId));
+
         User sender = userRepository.findByUserName(senderUsername)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + senderUsername));
 
-        Friendship friendship = friendshipRepository.findByUserOneOrUserTwoAndStatusAndRequestSenderUserNameNot(
-                        currentUser, currentUser, FriendStatus.PENDING, currentUser.getUserName())
+        Friendship friendship = friendshipRepository.findByUserOne_IdOrUserTwo_IdAndStatusAndRequestSender_UserNameNot(
+                        currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> new RuntimeException("No pending request from " + senderUsername));
 
         if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
@@ -92,9 +98,12 @@ public class FriendService {
     }
 
     @Transactional
-    public void decline(User currentUser, String senderUsername) {
-        Friendship friendship = friendshipRepository.findByUserOneOrUserTwoAndStatusAndRequestSenderUserNameNot(
-                        currentUser, currentUser, FriendStatus.PENDING, currentUser.getUserName())
+    public void decline(Long currentUserId, String senderUsername) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + currentUserId));
+
+        Friendship friendship = friendshipRepository.findByUserOne_IdOrUserTwo_IdAndStatusAndRequestSender_UserNameNot(
+                        currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> new RuntimeException("No pending request from " + senderUsername));
 
         if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
@@ -105,15 +114,15 @@ public class FriendService {
         friendshipRepository.save(friendship);
     }
 
-    public List<FriendResponseDTO> getFriendList(User currentUser) {
-        return friendshipRepository.findAllByUserId(currentUser.getId()).stream()
+    public List<FriendResponseDTO> getFriendList(Long currentUserId) {
+        return friendshipRepository.findAllByUserId(currentUserId).stream()
                 .map(f -> {
-                    User friend = f.getUserOne().getId().equals(currentUser.getId()) ? f.getUserTwo() : f.getUserOne();
+                    User friend = f.getUserOne().getId().equals(currentUserId) ? f.getUserTwo() : f.getUserOne();
                     return FriendResponseDTO.builder()
                             .id(friend.getId())
                             .username(friend.getUserName())
                             .status(f.getStatus().toString())
-                            .isSender(f.getRequestSender().getId().equals(currentUser.getId()))
+                            .isSender(f.getRequestSender().getId().equals(currentUserId))
                             .build();
                 })
                 .toList();

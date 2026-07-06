@@ -97,7 +97,7 @@ public class FriendService {
                         currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
 
-        if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
+        if (!friendship.getRequestSender().getUserName().equals(currentUser.getUserName())) {
             throw FriendException.invalidRequestSender(senderUsername);
         }
 

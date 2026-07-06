@@ -3,15 +3,16 @@ package com.aura.anime_updates.features.friends.domain.service;
 import com.aura.anime_updates.features.friends.api.response.FriendResponseDTO;
 import com.aura.anime_updates.features.friends.domain.entity.Friendship;
 import com.aura.anime_updates.features.friends.domain.enums.FriendStatus;
+import com.aura.anime_updates.features.friends.domain.exceptions.FriendException;
 import com.aura.anime_updates.features.friends.domain.repository.FriendshipRepository;
 import com.aura.anime_updates.features.notification.NotificationService;
 import com.aura.anime_updates.features.notification.payloadBuilders.FriendRequestNotificationPayloadBuilder;
 import com.aura.anime_updates.features.user.domain.entity.User;
 import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,21 +28,23 @@ public class FriendService {
 
     @Transactional
     public void sendRequest(Long senderId, String receiverUsername) {
+        validateUsername(receiverUsername);
+
         User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + senderId));
+                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(senderId)));
 
         User receiver = userRepository.findByUserName(receiverUsername)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + receiverUsername));
+                .orElseThrow(() -> FriendException.userNotFound(receiverUsername));
 
         if (sender.getId().equals(receiver.getId())) {
-            throw new IllegalArgumentException("You cannot send a tomodachi request to yourself.");
+            throw FriendException.selfRequest();
         }
 
         User userOne = (sender.getId() < receiver.getId()) ? sender : receiver;
         User userTwo = (sender.getId() < receiver.getId()) ? receiver : sender;
 
         if (friendshipRepository.findByUserOneIdAndUserTwoId(userOne.getId(), userTwo.getId()).isPresent()) {
-            throw new IllegalStateException("A tomodachi request already exists or you are already tomodachi.");
+            throw FriendException.alreadyExists();
         }
 
         Friendship friendship = Friendship.builder()
@@ -54,60 +57,74 @@ public class FriendService {
         friendshipRepository.save(friendship);
         List<User> users = new ArrayList<>();
         users.add(receiver);
-        notificationService.sendNotificationToAllDevicesOfUsers(users, notificationPayloadBuilder.buildFriendRequestNotificationPayload(sender.getUserName()), null);
+        notificationService.sendNotificationToAllDevicesOfUsers(
+                users,
+                notificationPayloadBuilder.buildFriendRequestNotificationPayload(sender.getUserName()),
+                null
+        );
     }
 
     @Transactional
     public void remove(Long removerId, String targetUserUsername) {
+        validateUsername(targetUserUsername);
+
         User remover = userRepository.findById(removerId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + removerId));
+                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(removerId)));
 
         User target = userRepository.findByUserName(targetUserUsername)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + targetUserUsername));
+                .orElseThrow(() -> FriendException.userNotFound(targetUserUsername));
 
         Long userOneId = Math.min(remover.getId(), target.getId());
         Long userTwoId = Math.max(remover.getId(), target.getId());
 
         Friendship friendship = friendshipRepository.findByUserOneIdAndUserTwoId(userOneId, userTwoId)
-                .orElseThrow(() -> new RuntimeException("Friendship or request does not exist"));
+                .orElseThrow(FriendException::friendshipNotFound);
 
         friendshipRepository.delete(friendship);
     }
 
     @Transactional
     public void accept(Long currentUserId, String senderUsername) {
+        validateUsername(senderUsername);
+
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + currentUserId));
+                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(currentUserId)));
 
         User sender = userRepository.findByUserName(senderUsername)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + senderUsername));
+                .orElseThrow(() -> FriendException.userNotFound(senderUsername));
 
         Friendship friendship = friendshipRepository.findByUserOne_IdOrUserTwo_IdAndStatusAndRequestSender_UserNameNot(
                         currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
-                .orElseThrow(() -> new RuntimeException("No pending request from " + senderUsername));
+                .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
 
         if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
-            throw new RuntimeException("This request was not sent by " + senderUsername);
+            throw FriendException.invalidRequestSender(senderUsername);
         }
 
         friendship.setStatus(FriendStatus.ACCEPTED);
         friendshipRepository.save(friendship);
         List<User> users = new ArrayList<>();
         users.add(sender);
-        notificationService.sendNotificationToAllDevicesOfUsers(users, notificationPayloadBuilder.buildFriendRequestAcceptedNotificationPayload(senderUsername), null);
+        notificationService.sendNotificationToAllDevicesOfUsers(
+                users,
+                notificationPayloadBuilder.buildFriendRequestAcceptedNotificationPayload(senderUsername),
+                null
+        );
     }
 
     @Transactional
     public void decline(Long currentUserId, String senderUsername) {
+        validateUsername(senderUsername);
+
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + currentUserId));
+                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(currentUserId)));
 
         Friendship friendship = friendshipRepository.findByUserOne_IdOrUserTwo_IdAndStatusAndRequestSender_UserNameNot(
                         currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
-                .orElseThrow(() -> new RuntimeException("No pending request from " + senderUsername));
+                .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
 
         if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
-            throw new RuntimeException("This request was not sent by " + senderUsername);
+            throw FriendException.invalidRequestSender(senderUsername);
         }
 
         friendship.setStatus(FriendStatus.DECLINED);
@@ -115,6 +132,10 @@ public class FriendService {
     }
 
     public List<FriendResponseDTO> getFriendList(Long currentUserId) {
+        if (!userRepository.existsById(currentUserId)) {
+            throw FriendException.userNotFound(String.valueOf(currentUserId));
+        }
+
         return friendshipRepository.findAllByUserId(currentUserId).stream()
                 .map(f -> {
                     User friend = f.getUserOne().getId().equals(currentUserId) ? f.getUserTwo() : f.getUserOne();
@@ -126,5 +147,11 @@ public class FriendService {
                             .build();
                 })
                 .toList();
+    }
+
+    private void validateUsername(String username) {
+        if (!StringUtils.hasText(username)) {
+            throw FriendException.usernameRequired();
+        }
     }
 }

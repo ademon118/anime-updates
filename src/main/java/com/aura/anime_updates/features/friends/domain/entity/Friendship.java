@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name= "friendships", uniqueConstraints = {
+@Table(name = "friendships", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_one_id", "user_two_id"})
 })
 @Getter
@@ -20,18 +20,19 @@ public class Friendship {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_one_id", nullable = false)
     private User userOne;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_two_id", nullable = false)
     private User userTwo;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_sender_id", nullable = false)
     private User requestSender;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FriendStatus status;
 }
-
-

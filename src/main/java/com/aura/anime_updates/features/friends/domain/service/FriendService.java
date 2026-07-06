@@ -76,7 +76,7 @@ public class FriendService {
         User sender = userRepository.findByUserName(senderUsername)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + senderUsername));
 
-        Friendship friendship = friendshipRepository.findByUserOneOrUserTwoAndStatusAndRequestSenderUsernameNot(
+        Friendship friendship = friendshipRepository.findByUserOneOrUserTwoAndStatusAndRequestSenderUserNameNot(
                         currentUser, currentUser, FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> new RuntimeException("No pending request from " + senderUsername));
 
@@ -93,7 +93,7 @@ public class FriendService {
 
     @Transactional
     public void decline(User currentUser, String senderUsername) {
-        Friendship friendship = friendshipRepository.findByUserOneOrUserTwoAndStatusAndRequestSenderUsernameNot(
+        Friendship friendship = friendshipRepository.findByUserOneOrUserTwoAndStatusAndRequestSenderUserNameNot(
                         currentUser, currentUser, FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> new RuntimeException("No pending request from " + senderUsername));
 

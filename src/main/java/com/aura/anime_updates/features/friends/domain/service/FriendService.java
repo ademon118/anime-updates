@@ -97,7 +97,7 @@ public class FriendService {
                         currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
                 .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
 
-        if (!friendship.getRequestSender().getUserName().equals(currentUser.getUserName())) {
+        if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
             throw FriendException.invalidRequestSender(senderUsername);
         }
 
@@ -107,28 +107,14 @@ public class FriendService {
         users.add(sender);
         notificationService.sendNotificationToAllDevicesOfUsers(
                 users,
-                notificationPayloadBuilder.buildFriendRequestAcceptedNotificationPayload(senderUsername),
+                notificationPayloadBuilder.buildFriendRequestAcceptedNotificationPayload(currentUser.getUserName()),
                 null
         );
     }
 
     @Transactional
     public void decline(Long currentUserId, String senderUsername) {
-        validateUsername(senderUsername);
-
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(currentUserId)));
-
-        Friendship friendship = friendshipRepository.findByUserOne_IdOrUserTwo_IdAndStatusAndRequestSender_UserNameNot(
-                        currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
-                .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
-
-        if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
-            throw FriendException.invalidRequestSender(senderUsername);
-        }
-
-        friendship.setStatus(FriendStatus.DECLINED);
-        friendshipRepository.save(friendship);
+        remove(currentUserId, senderUsername);
     }
 
     public List<FriendResponseDTO> getFriendList(Long currentUserId) {

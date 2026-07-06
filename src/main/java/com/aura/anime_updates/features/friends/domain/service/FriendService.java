@@ -93,16 +93,20 @@ public class FriendService {
         User sender = userRepository.findByUserName(senderUsername)
                 .orElseThrow(() -> FriendException.userNotFound(senderUsername));
 
-        Friendship friendship = friendshipRepository.findByUserOne_IdOrUserTwo_IdAndStatusAndRequestSender_UserNameNot(
-                        currentUser.getId(), currentUser.getId(), FriendStatus.PENDING, currentUser.getUserName())
+        Long id1 = Math.min(currentUser.getId(), sender.getId());
+        Long id2 = Math.max(currentUser.getId(), sender.getId());
+
+        Friendship friendship = friendshipRepository.findByUserOne_IdAndUserTwo_IdAndStatus(
+                        id1, id2, FriendStatus.PENDING)
                 .orElseThrow(() -> FriendException.pendingRequestNotFound(senderUsername));
 
-        if (!friendship.getRequestSender().getUserName().equals(senderUsername)) {
+        if (!friendship.getRequestSender().getId().equals(sender.getId())) {
             throw FriendException.invalidRequestSender(senderUsername);
         }
 
         friendship.setStatus(FriendStatus.ACCEPTED);
         friendshipRepository.save(friendship);
+
         List<User> users = new ArrayList<>();
         users.add(sender);
         notificationService.sendNotificationToAllDevicesOfUsers(

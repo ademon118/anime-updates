@@ -1,0 +1,24 @@
+package com.aura.anime_updates.features.friends.domain.repository;
+
+import com.aura.anime_updates.features.friends.domain.entity.Friendship;
+import com.aura.anime_updates.features.friends.domain.enums.FriendStatus;
+import com.aura.anime_updates.features.user.domain.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
+
+    @Query("SELECT f FROM Friendship f WHERE f.userOne.id = :userId OR f.userTwo.id = :userId")
+    List<Friendship> findAllByUserId(Long userId);
+
+    Optional<Friendship> findByUserOneIdAndUserTwoId(Long userOneId, Long userTwoId);
+
+    List<Friendship> findByStatusAndRequestSender_UserNameNot(FriendStatus status, String username);
+
+    Optional<Friendship> findByUserOneOrUserTwoAndStatusAndRequestSenderUserNameNot(User user1, User user2, FriendStatus status, String senderUsername);
+}

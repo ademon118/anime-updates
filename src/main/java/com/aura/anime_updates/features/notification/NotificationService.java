@@ -29,11 +29,15 @@ public class NotificationService {
 
         if(!tokensToSendTo.isEmpty()) {
             try {
-                MulticastMessage message = MulticastMessage.builder()
+                MulticastMessage.Builder builder = MulticastMessage.builder()
                         .addAllTokens(tokensToSendTo)
-                        .setNotification(notification)
-                        .putAllData(dataPayload)
-                        .build();
+                        .setNotification(notification);
+
+                if(dataPayload != null){
+                    builder.putAllData(dataPayload);
+                }
+                
+                MulticastMessage message = builder.build();
 
                 ApiFuture<BatchResponse> future = FirebaseMessaging.getInstance()
                         .sendEachForMulticastAsync(message);

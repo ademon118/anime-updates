@@ -64,7 +64,10 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             }
 
             Long userId = jwtService.getUserId(jws);
-            String username = (String) jws.getPayload().get("username");
+            String username = jws.getPayload().get("username", String.class);
+            if (username == null || username.isBlank()) {
+                username = String.valueOf(userId);
+            }
 
             CustomUserDetails user = new CustomUserDetails(userId, username, "", Collections.emptyList());
             attributes.put("user", user);

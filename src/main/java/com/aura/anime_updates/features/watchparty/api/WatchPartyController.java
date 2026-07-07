@@ -135,10 +135,12 @@ public class WatchPartyController {
         return switch (action.action()) {
             case PLAY -> {
                 party.setPlaying(true);
+                party.setCurrentTimeStamp(action.timestamp());
                 yield action.withSender(senderUsername);
             }
             case PAUSE -> {
                 party.setPlaying(false);
+                party.setCurrentTimeStamp(action.timestamp());
                 yield action.withSender(senderUsername);
             }
             case SEEK -> {

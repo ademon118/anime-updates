@@ -144,4 +144,9 @@ public class FriendService {
             throw FriendException.usernameRequired();
         }
     }
+
+    public boolean areFriends(Long userOneId, Long userTwoId) {
+        return friendshipRepository.existsByUserId1AndUserId2(userOneId, userTwoId);
+    }
+
 }

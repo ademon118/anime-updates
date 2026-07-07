@@ -1,5 +1,6 @@
 package com.aura.anime_updates.security;
 
+import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
 import com.aura.anime_updates.features.watchparty.domain.service.CleanupService;
 import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyManager;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -59,9 +61,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         String userId = String.valueOf(user.getId());
-        if (!watchPartyManager.isMember(partyId, userId)) {
-            reject("Party not found or access denied");
-        }
+        assertMember(partyId, userId, "CONNECT");
 
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes == null) {
@@ -76,6 +76,8 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
 
         cleanupService.cancelGracePeriod(partyId, userId);
         watchPartyManager.getParty(partyId).ifPresent(party -> party.getActiveMembers().add(userId));
+
+        log.info("Watch party WebSocket connected: partyId={} userId={}", partyId, userId);
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -88,9 +90,12 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         String userId = sessionAttributes != null ? (String) sessionAttributes.get("userId") : null;
 
-        if (userId == null || !watchPartyManager.isMember(partyId, userId)) {
-            reject("Party not found or access denied");
+        if (userId == null) {
+            log.warn("Watch party SUBSCRIBE missing session userId: partyId={} destination={}", partyId, destination);
+            reject("WebSocket session is not established");
         }
+
+        assertMember(partyId, userId, "SUBSCRIBE");
     }
 
     private void handleDisconnect(StompHeaderAccessor accessor) {
@@ -104,6 +109,27 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
 
         if (partyId != null && userId != null) {
             watchPartyManager.getParty(partyId).ifPresent(party -> party.getActiveMembers().remove(userId));
+        }
+    }
+
+    private void assertMember(String partyId, String userId, String phase) {
+        Optional<WatchParty> partyOpt = watchPartyManager.getParty(partyId);
+        if (partyOpt.isEmpty()) {
+            log.warn("Watch party {} rejected, party not found: partyId={} userId={}", phase, partyId, userId);
+            reject("Party not found");
+        }
+
+        WatchParty party = partyOpt.get();
+        if (!party.getJoinedMembers().contains(userId)) {
+            log.warn(
+                    "Watch party {} rejected, not a member: partyId={} userId={} members={} leaderId={}",
+                    phase,
+                    partyId,
+                    userId,
+                    party.getJoinedMembers(),
+                    party.getLeaderId()
+            );
+            reject("Access denied");
         }
     }
 
@@ -125,17 +151,17 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
     }
 
     private String resolvePartyId(StompHeaderAccessor accessor) {
-        String partyId = accessor.getFirstNativeHeader("partyId");
-        if (partyId != null && !partyId.isBlank()) {
-            return partyId.trim();
-        }
-
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes != null) {
             Object value = sessionAttributes.get("partyId");
             if (value != null && !value.toString().isBlank()) {
                 return value.toString().trim();
             }
+        }
+
+        String partyId = accessor.getFirstNativeHeader("partyId");
+        if (partyId != null && !partyId.isBlank()) {
+            return partyId.trim();
         }
 
         return null;

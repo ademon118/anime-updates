@@ -34,6 +34,12 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
         String token = servletRequest.getServletRequest().getParameter("token");
         if (token == null || token.isBlank()) {
+            String authHeader = servletRequest.getServletRequest().getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7).trim();
+            }
+        }
+        if (token == null || token.isBlank()) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
             return false;
         }

@@ -38,6 +38,8 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
                 handleConnect(accessor);
             } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                 handleSubscribe(accessor);
+            } else if (StompCommand.SEND.equals(accessor.getCommand())) {
+                ensureSessionUser(accessor);
             } else if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
                 handleDisconnect(accessor);
             }
@@ -96,6 +98,20 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         assertMember(partyId, userId, "SUBSCRIBE");
+    }
+
+    private void ensureSessionUser(StompHeaderAccessor accessor) {
+        if (accessor.getUser() != null) {
+            return;
+        }
+
+        CustomUserDetails user = resolveUser(accessor);
+        if (user == null) {
+            log.warn("Watch party SEND missing authenticated user");
+            reject("Unauthorized WebSocket message");
+        }
+
+        accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
     }
 
     private void handleDisconnect(StompHeaderAccessor accessor) {

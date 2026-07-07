@@ -2,6 +2,7 @@ package com.aura.anime_updates.core;
 
 import com.aura.anime_updates.features.authentication.domain.exceptions.InvalidCredentialsException;
 import com.aura.anime_updates.features.friends.domain.exceptions.FriendException;
+import com.aura.anime_updates.features.watchparty.domain.exceptions.WatchPartyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,6 +18,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(FriendException.class)
     public ResponseEntity<ErrorResponse> handleFriendException(FriendException ex) {
+        return buildErrorResponse(ex.getStatus(), ex.getCode(), ex.getMessage());
+    }
+
+    @ExceptionHandler(WatchPartyException.class)
+    public ResponseEntity<ErrorResponse> handleWatchPartyException(WatchPartyException ex) {
         return buildErrorResponse(ex.getStatus(), ex.getCode(), ex.getMessage());
     }
 

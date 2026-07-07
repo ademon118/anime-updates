@@ -60,6 +60,7 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-admin:9.2.0' // latest version
 
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 tasks.named('test') {

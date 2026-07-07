@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/anime-show/**").permitAll()
                         .requestMatchers("/api/android/app-version/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
-                        .requestMatchers("/ws-sync/**").permitAll()
+                        .requestMatchers("/ws-sync/**", "/ws-party", "/ws-party/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api-docs", "/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )

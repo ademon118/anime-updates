@@ -70,7 +70,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
 
         sessionAttributes.put("partyId", partyId);
         sessionAttributes.put("userId", userId);
-        sessionAttributes.put("username", user.getUsername());
+        sessionAttributes.put("username", resolveUsername(user));
 
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
 
@@ -165,6 +165,14 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         return null;
+    }
+
+    private String resolveUsername(CustomUserDetails user) {
+        String username = user.getUsername();
+        if (username == null || username.isBlank()) {
+            return String.valueOf(user.getId());
+        }
+        return username;
     }
 
     private void reject(String reason) {

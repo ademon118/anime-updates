@@ -1,9 +1,7 @@
 package com.aura.anime_updates.features.watchparty.domain.service;
 
-import com.aura.anime_updates.features.watchparty.api.SyncAction;
 import com.aura.anime_updates.features.watchparty.domain.entity.PendingInvite;
 import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
-import com.aura.anime_updates.features.watchparty.enums.SyncActionType;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -43,22 +41,8 @@ public class CleanupService {
     }
 
     private void expireMember(String partyId, WatchParty party, String userId) {
-        boolean wasLeader = party.getLeaderId().equals(userId);
-        party.removeMember(userId);
-
-        if (party.getJoinedMembers().isEmpty()) {
-            manager.removeParty(partyId);
-            return;
-        }
-
-        if (wasLeader) {
-            manager.transferLeadership(party).ifPresent(newLeaderId ->
-                    messagingTemplate.convertAndSend("/topic/party/" + partyId, SyncAction.builder()
-                            .action(SyncActionType.LEADER_CHANGE)
-                            .leaderId(newLeaderId)
-                            .build())
-            );
-        }
+        // Grace period only marks the user offline; membership stays until explicit leave.
+        party.getActiveMembers().remove(userId);
     }
 
     public void cancelGracePeriod(String partyId, String userId) {

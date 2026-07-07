@@ -25,6 +25,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Native WebSocket for mobile clients (no SockJS framing).
+        registry.addEndpoint("/ws-party")
+                .addInterceptors(jwtHandshakeInterceptor)
+                .setAllowedOriginPatterns("*");
+
+        // SockJS fallback for browsers.
         registry.addEndpoint("/ws-sync")
                 .addInterceptors(jwtHandshakeInterceptor)
                 .setAllowedOriginPatterns("*")

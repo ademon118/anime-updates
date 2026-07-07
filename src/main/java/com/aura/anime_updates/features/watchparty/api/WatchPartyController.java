@@ -28,23 +28,34 @@ public class WatchPartyController {
                                  SyncAction action,
                                  @AuthenticationPrincipal CustomUserDetails sender,
                                  SimpMessageHeaderAccessor headerAccessor) {
-        CustomUserDetails resolvedSender = resolveSender(sender, headerAccessor);
-        if (resolvedSender == null) {
+        String userId = resolveUserId(sender, headerAccessor);
+        if (userId == null) {
             log.warn(
-                    "Watch party sync dropped: no authenticated sender partyId={} action={}",
+                    "Watch party sync dropped: no userId partyId={} action={} principal={}",
                     partyId,
+                    action.action(),
+                    sender
+            );
+            return null;
+        }
+
+        WatchParty party = watchPartyManager.getParty(partyId).orElse(null);
+        if (party == null) {
+            log.warn(
+                    "Watch party sync dropped: party not found partyId={} userId={} action={}",
+                    partyId,
+                    userId,
                     action.action()
             );
             return null;
         }
 
-        String userId = String.valueOf(resolvedSender.getId());
-        WatchParty party = watchPartyManager.getParty(partyId).orElse(null);
-        if (party == null || !party.getJoinedMembers().contains(userId)) {
+        if (!party.getJoinedMembers().contains(userId)) {
             log.warn(
-                    "Watch party sync dropped: party missing or user not member partyId={} userId={} action={}",
+                    "Watch party sync dropped: user not member partyId={} userId={} members={} action={}",
                     partyId,
                     userId,
+                    party.getJoinedMembers(),
                     action.action()
             );
             return null;
@@ -59,46 +70,65 @@ public class WatchPartyController {
             return null;
         }
 
-        String senderName = resolveSenderName(resolvedSender);
+        String senderName = resolveSenderName(userId, headerAccessor, sender);
         SyncAction broadcast = applyAction(party, action, senderName);
         party.setLastUpdated(System.currentTimeMillis());
         log.info(
-                "Watch party broadcast partyId={} action={} from={} videoUrl={}",
+                "Watch party broadcast partyId={} action={} from={} userId={} videoUrl={}",
                 partyId,
                 broadcast.action(),
                 senderName,
+                userId,
                 broadcast.videoUrl()
         );
         return broadcast;
     }
 
-    private CustomUserDetails resolveSender(
-            CustomUserDetails sender,
-            SimpMessageHeaderAccessor headerAccessor
-    ) {
-        if (sender != null) {
-            return sender;
-        }
-
+    /**
+     * Session userId is set on CONNECT and is the most reliable identity for STOMP SEND.
+     */
+    private String resolveUserId(CustomUserDetails sender, SimpMessageHeaderAccessor headerAccessor) {
         Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
-        if (sessionAttributes == null) {
-            return null;
+        if (sessionAttributes != null) {
+            Object sessionUserId = sessionAttributes.get("userId");
+            if (sessionUserId != null && !sessionUserId.toString().isBlank()) {
+                return sessionUserId.toString().trim();
+            }
+
+            Object sessionUser = sessionAttributes.get("user");
+            if (sessionUser instanceof CustomUserDetails details && details.getId() != null) {
+                return String.valueOf(details.getId());
+            }
         }
 
-        Object sessionUser = sessionAttributes.get("user");
-        if (sessionUser instanceof CustomUserDetails details) {
-            return details;
+        if (sender != null && sender.getId() != null) {
+            return String.valueOf(sender.getId());
         }
 
         return null;
     }
 
-    private String resolveSenderName(CustomUserDetails sender) {
-        String username = sender.getUsername();
-        if (username == null || username.isBlank()) {
-            return String.valueOf(sender.getId());
+    private String resolveSenderName(
+            String userId,
+            SimpMessageHeaderAccessor headerAccessor,
+            CustomUserDetails sender
+    ) {
+        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+        if (sessionAttributes != null) {
+            Object sessionUsername = sessionAttributes.get("username");
+            if (sessionUsername != null && !sessionUsername.toString().isBlank()) {
+                return sessionUsername.toString().trim();
+            }
         }
-        return username;
+
+        if (sender != null) {
+            String username = sender.getUsername();
+            if (username != null && !username.isBlank()) {
+                return username;
+            }
+        }
+
+        return userId;
     }
 
     private SyncAction applyAction(WatchParty party, SyncAction action, String senderUsername) {

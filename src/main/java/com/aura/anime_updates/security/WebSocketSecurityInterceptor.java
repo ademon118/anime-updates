@@ -3,8 +3,10 @@ package com.aura.anime_updates.security;
 import com.aura.anime_updates.features.watchparty.domain.service.CleanupService;
 import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketSecurityInterceptor implements ChannelInterceptor {
@@ -28,34 +31,43 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
             return message;
         }
 
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            handleConnect(accessor);
-        } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
-            handleSubscribe(accessor);
-        } else if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
-            handleDisconnect(accessor);
+        try {
+            if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+                handleConnect(accessor);
+            } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+                handleSubscribe(accessor);
+            } else if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
+                handleDisconnect(accessor);
+            }
+        } catch (MessageDeliveryException ex) {
+            log.warn("Watch party WebSocket rejected: {}", ex.getMessage());
+            throw ex;
         }
 
         return message;
     }
 
     private void handleConnect(StompHeaderAccessor accessor) {
-        CustomUserDetails user = (CustomUserDetails) accessor.getSessionAttributes().get("user");
+        CustomUserDetails user = resolveUser(accessor);
         if (user == null) {
-            throw new IllegalArgumentException("Unauthorized WebSocket connection");
+            reject("Unauthorized WebSocket connection");
         }
 
-        String partyId = accessor.getFirstNativeHeader("partyId");
+        String partyId = resolvePartyId(accessor);
         if (partyId == null || partyId.isBlank()) {
-            throw new IllegalArgumentException("partyId header is required");
+            reject("partyId is required");
         }
 
         String userId = String.valueOf(user.getId());
         if (!watchPartyManager.isMember(partyId, userId)) {
-            throw new IllegalArgumentException("Party not found or access denied");
+            reject("Party not found or access denied");
         }
 
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes == null) {
+            reject("WebSocket session is unavailable");
+        }
+
         sessionAttributes.put("partyId", partyId);
         sessionAttributes.put("userId", userId);
         sessionAttributes.put("username", user.getUsername());
@@ -73,19 +85,63 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         String partyId = destination.substring("/topic/party/".length());
-        String userId = (String) accessor.getSessionAttributes().get("userId");
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        String userId = sessionAttributes != null ? (String) sessionAttributes.get("userId") : null;
 
         if (userId == null || !watchPartyManager.isMember(partyId, userId)) {
-            throw new IllegalArgumentException("Party not found or access denied");
+            reject("Party not found or access denied");
         }
     }
 
     private void handleDisconnect(StompHeaderAccessor accessor) {
-        String partyId = (String) accessor.getSessionAttributes().get("partyId");
-        String userId = (String) accessor.getSessionAttributes().get("userId");
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes == null) {
+            return;
+        }
+
+        String partyId = (String) sessionAttributes.get("partyId");
+        String userId = (String) sessionAttributes.get("userId");
 
         if (partyId != null && userId != null) {
             watchPartyManager.getParty(partyId).ifPresent(party -> party.getActiveMembers().remove(userId));
         }
+    }
+
+    private CustomUserDetails resolveUser(StompHeaderAccessor accessor) {
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes != null) {
+            Object user = sessionAttributes.get("user");
+            if (user instanceof CustomUserDetails details) {
+                return details;
+            }
+        }
+
+        if (accessor.getUser() instanceof UsernamePasswordAuthenticationToken auth
+                && auth.getPrincipal() instanceof CustomUserDetails details) {
+            return details;
+        }
+
+        return null;
+    }
+
+    private String resolvePartyId(StompHeaderAccessor accessor) {
+        String partyId = accessor.getFirstNativeHeader("partyId");
+        if (partyId != null && !partyId.isBlank()) {
+            return partyId.trim();
+        }
+
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes != null) {
+            Object value = sessionAttributes.get("partyId");
+            if (value != null && !value.toString().isBlank()) {
+                return value.toString().trim();
+            }
+        }
+
+        return null;
+    }
+
+    private void reject(String reason) {
+        throw new MessageDeliveryException(reason);
     }
 }

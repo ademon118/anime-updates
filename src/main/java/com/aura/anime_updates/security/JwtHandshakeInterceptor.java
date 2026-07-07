@@ -62,6 +62,12 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
             CustomUserDetails user = new CustomUserDetails(userId, username, "", Collections.emptyList());
             attributes.put("user", user);
+
+            String partyId = servletRequest.getServletRequest().getParameter("partyId");
+            if (partyId != null && !partyId.isBlank()) {
+                attributes.put("partyId", partyId.trim());
+            }
+
             return true;
         } catch (JwtException e) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);

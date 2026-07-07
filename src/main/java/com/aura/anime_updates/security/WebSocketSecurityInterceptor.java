@@ -73,6 +73,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         sessionAttributes.put("partyId", partyId);
         sessionAttributes.put("userId", userId);
         sessionAttributes.put("username", resolveUsername(user));
+        sessionAttributes.put("user", user);
 
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
 
@@ -101,10 +102,6 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
     }
 
     private void ensureSessionUser(StompHeaderAccessor accessor) {
-        if (accessor.getUser() != null) {
-            return;
-        }
-
         CustomUserDetails user = resolveUser(accessor);
         if (user == null) {
             log.warn("Watch party SEND missing authenticated user");
@@ -112,6 +109,13 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes != null && sessionAttributes.get("userId") == null && user.getId() != null) {
+            sessionAttributes.put("userId", String.valueOf(user.getId()));
+            sessionAttributes.put("username", resolveUsername(user));
+            sessionAttributes.put("user", user);
+        }
     }
 
     private void handleDisconnect(StompHeaderAccessor accessor) {

@@ -4,7 +4,7 @@ import com.aura.anime_updates.features.watchparty.api.SyncAction;
 import com.aura.anime_updates.features.watchparty.domain.entity.PendingInvite;
 import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
 import com.aura.anime_updates.features.watchparty.enums.SyncActionType;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 @Service
-@RequiredArgsConstructor
 public class CleanupService {
 
     private static final long GRACE_PERIOD_SECONDS = 60;
@@ -23,6 +22,11 @@ public class CleanupService {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final Map<String, ScheduledFuture<?>> gracePeriods = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> inviteExpiries = new ConcurrentHashMap<>();
+
+    public CleanupService(WatchPartyManager manager, @Lazy SimpMessagingTemplate messagingTemplate) {
+        this.manager = manager;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     public void startGracePeriod(String partyId, String userId) {
         manager.getParty(partyId).ifPresent(p -> p.getActiveMembers().remove(userId));

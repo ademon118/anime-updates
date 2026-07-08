@@ -24,9 +24,9 @@ public class WebSocketEventListener {
         }
 
         String partyId = (String) sessionAttributes.get("partyId");
-        String userId = (String) sessionAttributes.get("userId");
-        if (partyId != null && userId != null) {
-            membershipService.markOffline(partyId, userId);
+        String username = (String) sessionAttributes.get("username");
+        if (partyId != null && username != null) {
+            membershipService.markOffline(partyId, username);
         }
     }
 }

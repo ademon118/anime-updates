@@ -14,6 +14,7 @@ import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -32,38 +33,38 @@ public class WatchPartyService {
     private final CleanupService cleanupService;
     private final WatchPartySyncPublisher syncPublisher;
 
-    public PartyInviteResponse inviteFriend(Long leaderId, Long friendId) {
-        if (leaderId.equals(friendId)) {
+    public PartyInviteResponse inviteFriend(String leaderUsername, String friendUsername) {
+        String normalizedLeaderUsername = requireUsername(leaderUsername);
+        String normalizedFriendUsername = requireUsername(friendUsername);
+
+        if (normalizedLeaderUsername.equalsIgnoreCase(normalizedFriendUsername)) {
             throw WatchPartyException.selfInvite();
         }
-        if (!friendService.areFriends(leaderId, friendId)) {
+        if (!friendService.areFriends(normalizedLeaderUsername, normalizedFriendUsername)) {
             throw WatchPartyException.notFriends();
         }
 
-        User leader = userRepository.findById(leaderId)
-                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(leaderId)));
-        User friend = userRepository.findById(friendId)
-                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(friendId)));
+        User leader = userRepository.findByUserName(normalizedLeaderUsername)
+                .orElseThrow(() -> FriendException.userNotFound(normalizedLeaderUsername));
+        User friend = userRepository.findByUserName(normalizedFriendUsername)
+                .orElseThrow(() -> FriendException.userNotFound(normalizedFriendUsername));
 
-        String leaderIdValue = String.valueOf(leaderId);
-        String friendIdValue = String.valueOf(friendId);
-
-        synchronized (manager.leaderInviteLock(leaderIdValue)) {
-            WatchParty party = manager.findActivePartyForLeader(leaderIdValue)
+        synchronized (manager.leaderInviteLock(normalizedLeaderUsername)) {
+            WatchParty party = manager.findActivePartyForLeader(normalizedLeaderUsername)
                     .orElseGet(() -> {
                         String partyId = UUID.randomUUID().toString();
-                        return manager.createParty(leaderIdValue, partyId);
+                        return manager.createParty(normalizedLeaderUsername, partyId);
                     });
 
-            if (party.getJoinedMembers().contains(friendIdValue)) {
+            if (party.getJoinedMembers().contains(normalizedFriendUsername)) {
                 throw WatchPartyException.alreadyMember();
             }
 
-            replacePendingInviteIfPresent(party, friendIdValue);
+            replacePendingInviteIfPresent(party, normalizedFriendUsername);
 
             String inviteToken = UUID.randomUUID().toString();
             long expiresAt = System.currentTimeMillis() + (CleanupService.INVITE_TTL_SECONDS * 1000);
-            party.getPendingInvites().put(inviteToken, new PendingInvite(friendIdValue, expiresAt));
+            party.getPendingInvites().put(inviteToken, new PendingInvite(normalizedFriendUsername, expiresAt));
             cleanupService.scheduleInviteExpiry(party.getPartyId(), inviteToken);
 
             sendInviteNotification(leader, friend, party.getPartyId(), inviteToken);
@@ -75,10 +76,10 @@ public class WatchPartyService {
         }
     }
 
-    private void replacePendingInviteIfPresent(WatchParty party, String friendId) {
+    private void replacePendingInviteIfPresent(WatchParty party, String inviteeUsername) {
         String partyId = party.getPartyId();
         party.getPendingInvites().entrySet().removeIf(entry -> {
-            if (!friendId.equals(entry.getValue().friendId())) {
+            if (!inviteeUsername.equals(entry.getValue().inviteeUsername())) {
                 return false;
             }
             cleanupService.cancelInviteExpiry(partyId, entry.getKey());
@@ -92,94 +93,102 @@ public class WatchPartyService {
             String partyId,
             String inviteToken
     ) {
-        Notification notification = notificationPayloadBuilder.buildInviteNotification(leader.getUserName());
-        var data = notificationPayloadBuilder.buildInviteData(
-                partyId,
-                inviteToken,
-                String.valueOf(leader.getId()),
-                leader.getUserName()
-        );
+        String leaderUsername = requireUsername(leader);
+        Notification notification = notificationPayloadBuilder.buildInviteNotification(leaderUsername);
+        var data = notificationPayloadBuilder.buildInviteData(partyId, inviteToken, leaderUsername);
         notificationService.sendNotificationToAllDevicesOfUsers(List.of(friend), notification, data);
     }
 
-    public void acceptInvite(Long userId, String partyId, String token) {
+    public void acceptInvite(String joinerUsername, String partyId, String token) {
+        String normalizedJoinerUsername = requireUsername(joinerUsername);
+
         WatchParty party = manager.getParty(partyId).orElseThrow(WatchPartyException::partyNotFound);
         PendingInvite invite = party.getPendingInvites().remove(token);
 
         if (invite == null || invite.isExpired()) {
             throw WatchPartyException.invalidToken();
         }
-        if (!invite.friendId().equals(String.valueOf(userId))) {
+        if (!invite.inviteeUsername().equals(normalizedJoinerUsername)) {
             throw WatchPartyException.notInvitee();
         }
-        if (!friendService.areFriends(Long.parseLong(party.getLeaderId()), userId)) {
+        if (!friendService.areFriends(party.getLeaderUsername(), normalizedJoinerUsername)) {
             throw WatchPartyException.notFriends();
         }
 
         cleanupService.cancelInviteExpiry(partyId, token);
-        party.addMember(String.valueOf(userId));
-
-        User joiner = userRepository.findById(userId)
-                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(userId)));
-        syncPublisher.publishMemberJoined(party, joiner.getUserName());
+        party.addMember(normalizedJoinerUsername);
+        syncPublisher.publishMemberJoined(party, normalizedJoinerUsername);
     }
 
-    public void declineInvite(Long userId, String partyId, String token) {
+    public void declineInvite(String friendUsername, String partyId, String token) {
+        String normalizedFriendUsername = requireUsername(friendUsername);
+
         WatchParty party = manager.getParty(partyId).orElseThrow(WatchPartyException::partyNotFound);
         PendingInvite invite = party.getPendingInvites().remove(token);
 
         if (invite == null || invite.isExpired()) {
             throw WatchPartyException.invalidToken();
         }
-        if (!invite.friendId().equals(String.valueOf(userId))) {
+        if (!invite.inviteeUsername().equals(normalizedFriendUsername)) {
             throw WatchPartyException.notInvitee();
         }
 
         cleanupService.cancelInviteExpiry(partyId, token);
 
-        User friend = userRepository.findById(userId)
-                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(userId)));
-        User leader = userRepository.findById(Long.parseLong(party.getLeaderId()))
-                .orElseThrow(() -> FriendException.userNotFound(party.getLeaderId()));
+        User leader = userRepository.findByUserName(party.getLeaderUsername())
+                .orElseThrow(() -> FriendException.userNotFound(party.getLeaderUsername()));
 
-        Notification notification = notificationPayloadBuilder.buildDeclineNotification(friend.getUserName());
-        var data = notificationPayloadBuilder.buildDeclineData(
-                partyId,
-                String.valueOf(userId),
-                friend.getUserName()
-        );
+        Notification notification = notificationPayloadBuilder.buildDeclineNotification(normalizedFriendUsername);
+        var data = notificationPayloadBuilder.buildDeclineData(partyId, normalizedFriendUsername);
         notificationService.sendNotificationToAllDevicesOfUsers(List.of(leader), notification, data);
 
         manager.cleanupIfAbandoned(partyId, party);
     }
 
-    public PartyStateResponse getPartyState(String partyId, Long userId) {
+    public PartyStateResponse getPartyState(String partyId, String requesterUsername) {
+        String normalizedRequesterUsername = requireUsername(requesterUsername);
+
         WatchParty party = manager.getParty(partyId).orElseThrow(WatchPartyException::partyNotFound);
 
-        if (!party.getJoinedMembers().contains(String.valueOf(userId))) {
+        if (!party.getJoinedMembers().contains(normalizedRequesterUsername)) {
             throw WatchPartyException.notMember();
         }
 
         return PartyStateResponse.builder()
                 .partyId(party.getPartyId())
-                .leaderId(party.getLeaderId())
+                .leaderUsername(party.getLeaderUsername())
                 .videoUrl(party.getVideoUrl())
                 .currentTimeStamp(party.getCurrentTimeStamp())
                 .isPlaying(party.isPlaying())
                 .members(party.getJoinedMembers())
                 .activeMembers(party.getActiveMembers())
-                .pendingInviteUserIds(resolvePendingInviteUserIds(party, userId))
+                .pendingInviteUsernames(resolvePendingInviteUsernames(party, normalizedRequesterUsername))
                 .build();
     }
 
-    private Set<String> resolvePendingInviteUserIds(WatchParty party, Long requesterUserId) {
-        if (!party.getLeaderId().equals(String.valueOf(requesterUserId))) {
+    private Set<String> resolvePendingInviteUsernames(WatchParty party, String requesterUsername) {
+        if (!party.getLeaderUsername().equals(requesterUsername)) {
             return Set.of();
         }
 
         return party.getPendingInvites().values().stream()
                 .filter(invite -> !invite.isExpired())
-                .map(PendingInvite::friendId)
+                .map(PendingInvite::inviteeUsername)
                 .collect(Collectors.toSet());
+    }
+
+    private String requireUsername(User user) {
+        String username = user.getUserName();
+        if (!StringUtils.hasText(username)) {
+            throw WatchPartyException.missingUsername();
+        }
+        return username.trim();
+    }
+
+    private String requireUsername(String username) {
+        if (!StringUtils.hasText(username)) {
+            throw WatchPartyException.missingUsername();
+        }
+        return username.trim();
     }
 }

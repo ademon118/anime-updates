@@ -12,7 +12,7 @@ public record SyncAction(
         boolean isPlaying,
         String videoUrl,
         String senderUsername,
-        String leaderId,
+        String leaderUsername,
         Set<String> activeMembers,
         Set<String> members
 ) {
@@ -23,7 +23,7 @@ public record SyncAction(
                 isPlaying,
                 videoUrl,
                 senderUsername,
-                leaderId,
+                leaderUsername,
                 activeMembers,
                 members
         );

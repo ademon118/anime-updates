@@ -149,4 +149,16 @@ public class FriendService {
         return friendshipRepository.existsByUserId1AndUserId2(userOneId, userTwoId);
     }
 
+    public boolean areFriends(String usernameOne, String usernameTwo) {
+        validateUsername(usernameOne);
+        validateUsername(usernameTwo);
+
+        User userOne = userRepository.findByUserName(usernameOne.trim())
+                .orElseThrow(() -> FriendException.userNotFound(usernameOne));
+        User userTwo = userRepository.findByUserName(usernameTwo.trim())
+                .orElseThrow(() -> FriendException.userNotFound(usernameTwo));
+
+        return areFriends(userOne.getId(), userTwo.getId());
+    }
+
 }

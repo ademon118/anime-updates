@@ -7,12 +7,12 @@ import java.util.Set;
 @Builder
 public record PartyStateResponse(
         String partyId,
-        String leaderId,
+        String leaderUsername,
         String videoUrl,
         double currentTimeStamp,
         boolean isPlaying,
         Set<String> members,
         Set<String> activeMembers,
-        Set<String> pendingInviteUserIds
+        Set<String> pendingInviteUsernames
 ) {
 }

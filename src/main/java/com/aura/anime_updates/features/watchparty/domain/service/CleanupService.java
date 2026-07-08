@@ -23,27 +23,27 @@ public class CleanupService {
         this.partyManager = partyManager;
     }
 
-    public void scheduleOfflineGracePeriod(String partyId, String userId, Runnable onGraceExpired) {
-        cancelOfflineGracePeriod(partyId, userId);
+    public void scheduleOfflineGracePeriod(String partyId, String username, Runnable onGraceExpired) {
+        cancelOfflineGracePeriod(partyId, username);
 
-        String taskKey = offlineGraceKey(partyId, userId);
+        String taskKey = offlineGraceKey(partyId, username);
         ScheduledFuture<?> task = scheduler.schedule(() -> {
             offlineGraceTasks.remove(taskKey);
-            log.info("Watch party offline grace expired partyId={} userId={}", partyId, userId);
+            log.info("Watch party offline grace expired partyId={} username={}", partyId, username);
             onGraceExpired.run();
         }, OFFLINE_GRACE_SECONDS, TimeUnit.SECONDS);
 
         offlineGraceTasks.put(taskKey, task);
         log.info(
-                "Watch party offline grace scheduled partyId={} userId={} seconds={}",
+                "Watch party offline grace scheduled partyId={} username={} seconds={}",
                 partyId,
-                userId,
+                username,
                 OFFLINE_GRACE_SECONDS
         );
     }
 
-    public void cancelOfflineGracePeriod(String partyId, String userId) {
-        cancelTask(offlineGraceTasks, offlineGraceKey(partyId, userId));
+    public void cancelOfflineGracePeriod(String partyId, String username) {
+        cancelTask(offlineGraceTasks, offlineGraceKey(partyId, username));
     }
 
     public void scheduleInviteExpiry(String partyId, String token) {
@@ -75,8 +75,8 @@ public class CleanupService {
         }
     }
 
-    private String offlineGraceKey(String partyId, String userId) {
-        return partyId + ":offline:" + userId;
+    private String offlineGraceKey(String partyId, String username) {
+        return partyId + ":offline:" + username;
     }
 
     private String inviteExpiryKey(String partyId, String token) {

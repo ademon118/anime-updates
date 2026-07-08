@@ -31,8 +31,9 @@ public class WatchPartySyncPublisher {
                 SyncAction.builder()
                         .action(SyncActionType.JOIN)
                         .senderUsername(joinerUsername)
-                        .leaderId(party.getLeaderId())
+                        .leaderUsername(party.getLeaderUsername())
                         .members(Set.copyOf(party.getJoinedMembers()))
+                        .activeMembers(Set.copyOf(party.getActiveMembers()))
                         .build()
         );
     }
@@ -49,27 +50,16 @@ public class WatchPartySyncPublisher {
 
     public SyncAction buildLeaveBroadcast(
             String senderUsername,
-            String leaderId,
-            Set<String> remainingMembers
+            String leaderUsername,
+            Set<String> remainingMembers,
+            Set<String> activeMembers
     ) {
         return SyncAction.builder()
                 .action(SyncActionType.LEAVE)
                 .senderUsername(senderUsername)
-                .leaderId(leaderId)
+                .leaderUsername(leaderUsername)
                 .members(remainingMembers)
-                .build();
-    }
-
-    public SyncAction buildJoinBroadcast(
-            String senderUsername,
-            String leaderId,
-            Set<String> members
-    ) {
-        return SyncAction.builder()
-                .action(SyncActionType.JOIN)
-                .senderUsername(senderUsername)
-                .leaderId(leaderId)
-                .members(members)
+                .activeMembers(activeMembers)
                 .build();
     }
 }

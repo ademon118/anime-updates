@@ -25,25 +25,23 @@ public class WatchPartyNotificationPayloadBuilder {
                 .build();
     }
 
-    public Map<String, String> buildInviteData(String partyId, String inviteToken, String leaderId, String leaderUsername) {
+    public Map<String, String> buildInviteData(
+            String partyId,
+            String inviteToken,
+            String leaderUsername
+    ) {
         return Map.of(
                 "type", TYPE,
                 "partyId", partyId,
                 "inviteToken", inviteToken,
-                "leaderId", leaderId,
                 "leaderUsername", leaderUsername
         );
     }
 
-    public Map<String, String> buildDeclineData(
-            String partyId,
-            String declinedUserId,
-            String declinedUsername
-    ) {
+    public Map<String, String> buildDeclineData(String partyId, String declinedUsername) {
         return Map.of(
                 "type", DECLINED_TYPE,
                 "partyId", partyId,
-                "declinedUserId", declinedUserId,
                 "declinedUsername", declinedUsername
         );
     }

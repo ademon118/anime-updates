@@ -13,24 +13,24 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class WatchPartyManager {
     private final Map<String, WatchParty> activeParties = new ConcurrentHashMap<>();
-    private final Map<String, String> activePartyIdByLeaderId = new ConcurrentHashMap<>();
+    private final Map<String, String> activePartyIdByLeaderUsername = new ConcurrentHashMap<>();
     private final Map<String, Object> leaderInviteLocks = new ConcurrentHashMap<>();
 
-    public Object leaderInviteLock(String leaderId) {
-        return leaderInviteLocks.computeIfAbsent(leaderId, ignored -> new Object());
+    public Object leaderInviteLock(String leaderUsername) {
+        return leaderInviteLocks.computeIfAbsent(leaderUsername, ignored -> new Object());
     }
 
-    public WatchParty createParty(String leaderId, String partyId) {
+    public WatchParty createParty(String leaderUsername, String partyId) {
         WatchParty party = WatchParty.builder()
                 .partyId(partyId)
-                .leaderId(leaderId)
+                .leaderUsername(leaderUsername)
                 .isPlaying(false)
                 .currentTimeStamp(0.0)
                 .lastUpdated(System.currentTimeMillis())
                 .build();
-        party.addMember(leaderId);
+        party.addMember(leaderUsername);
         activeParties.put(partyId, party);
-        registerActivePartyForLeader(leaderId, partyId);
+        registerActivePartyForLeader(leaderUsername, partyId);
         return party;
     }
 
@@ -38,55 +38,55 @@ public class WatchPartyManager {
         return Optional.ofNullable(activeParties.get(partyId));
     }
 
-    public Optional<WatchParty> findActivePartyForLeader(String leaderId) {
-        String partyId = activePartyIdByLeaderId.get(leaderId);
+    public Optional<WatchParty> findActivePartyForLeader(String leaderUsername) {
+        String partyId = activePartyIdByLeaderUsername.get(leaderUsername);
         if (partyId == null) {
             return Optional.empty();
         }
 
         WatchParty party = activeParties.get(partyId);
         if (party == null) {
-            activePartyIdByLeaderId.remove(leaderId, partyId);
+            activePartyIdByLeaderUsername.remove(leaderUsername, partyId);
             return Optional.empty();
         }
 
-        if (!leaderId.equals(party.getLeaderId())) {
-            activePartyIdByLeaderId.remove(leaderId, partyId);
+        if (!leaderUsername.equals(party.getLeaderUsername())) {
+            activePartyIdByLeaderUsername.remove(leaderUsername, partyId);
             return Optional.empty();
         }
 
         return Optional.of(party);
     }
 
-    public void registerActivePartyForLeader(String leaderId, String partyId) {
-        activePartyIdByLeaderId.put(leaderId, partyId);
+    public void registerActivePartyForLeader(String leaderUsername, String partyId) {
+        activePartyIdByLeaderUsername.put(leaderUsername, partyId);
     }
 
-    public void unregisterActivePartyForLeader(String leaderId, String partyId) {
-        activePartyIdByLeaderId.remove(leaderId, partyId);
+    public void unregisterActivePartyForLeader(String leaderUsername, String partyId) {
+        activePartyIdByLeaderUsername.remove(leaderUsername, partyId);
     }
 
-    public void recordLeadershipTransfer(String partyId, String previousLeaderId, String newLeaderId) {
-        unregisterActivePartyForLeader(previousLeaderId, partyId);
-        registerActivePartyForLeader(newLeaderId, partyId);
+    public void recordLeadershipTransfer(String partyId, String previousLeaderUsername, String newLeaderUsername) {
+        unregisterActivePartyForLeader(previousLeaderUsername, partyId);
+        registerActivePartyForLeader(newLeaderUsername, partyId);
     }
 
     public void removeParty(String partyId) {
         WatchParty party = activeParties.remove(partyId);
         if (party != null) {
-            unregisterActivePartyForLeader(party.getLeaderId(), partyId);
+            unregisterActivePartyForLeader(party.getLeaderUsername(), partyId);
         }
     }
 
-    public boolean isMember(String partyId, String userId) {
+    public boolean isMember(String partyId, String username) {
         return getParty(partyId)
-                .map(p -> p.getJoinedMembers().contains(userId))
+                .map(p -> p.getJoinedMembers().contains(username))
                 .orElse(false);
     }
 
-    public boolean isLeader(String partyId, String userId) {
+    public boolean isLeader(String partyId, String username) {
         return getParty(partyId)
-                .map(p -> p.getLeaderId().equals(userId))
+                .map(p -> p.getLeaderUsername().equals(username))
                 .orElse(false);
     }
 
@@ -96,29 +96,18 @@ public class WatchPartyManager {
         }
 
         List<String> candidates = new ArrayList<>(party.getJoinedMembers());
-        String newLeader = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
-        String previousLeaderId = party.getLeaderId();
-        party.setLeaderId(newLeader);
-        recordLeadershipTransfer(party.getPartyId(), previousLeaderId, newLeader);
-        return Optional.of(newLeader);
+        String newLeaderUsername = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        String previousLeaderUsername = party.getLeaderUsername();
+        party.setLeaderUsername(newLeaderUsername);
+        recordLeadershipTransfer(party.getPartyId(), previousLeaderUsername, newLeaderUsername);
+        return Optional.of(newLeaderUsername);
     }
 
     /**
-     * Dissolves a party when the leader is the only joined member and there is nothing pending.
-     * Skips dissolution when that leader is offline — their offline grace timer will remove them
-     * and transfer leadership or dissolve through the normal leave flow.
+     * Solo-leader parties are kept alive so the leader can invite again without restarting.
+     * Parties are removed only when the last member leaves through the normal leave flow.
      */
     public void cleanupIfAbandoned(String partyId, WatchParty party) {
-        boolean leaderAlone = party.getJoinedMembers().size() == 1
-                && party.getJoinedMembers().contains(party.getLeaderId());
-        if (!leaderAlone || !party.getPendingInvites().isEmpty()) {
-            return;
-        }
-
-        if (!party.getActiveMembers().contains(party.getLeaderId())) {
-            return;
-        }
-
-        removeParty(partyId);
+        // Intentionally no-op: do not dissolve while the leader remains in the party.
     }
 }

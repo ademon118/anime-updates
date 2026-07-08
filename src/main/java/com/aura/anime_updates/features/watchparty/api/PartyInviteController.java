@@ -6,6 +6,7 @@ import com.aura.anime_updates.features.watchparty.api.request.DeclineInviteReque
 import com.aura.anime_updates.features.watchparty.api.request.InviteRequest;
 import com.aura.anime_updates.features.watchparty.api.response.PartyInviteResponse;
 import com.aura.anime_updates.features.watchparty.api.response.PartyStateResponse;
+import com.aura.anime_updates.features.watchparty.domain.exceptions.WatchPartyException;
 import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyService;
 import com.aura.anime_updates.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,7 +35,10 @@ public class PartyInviteController {
     public ResponseEntity<ApiResponse<PartyInviteResponse>> inviteFriend(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody InviteRequest request) {
-        PartyInviteResponse response = watchPartyService.inviteFriend(currentUser.getId(), request.friendId());
+        PartyInviteResponse response = watchPartyService.inviteFriend(
+                requireUsername(currentUser),
+                request.friendUsername()
+        );
         return ResponseEntity.ok(ApiResponse.success(response, "Invite created successfully."));
     }
 
@@ -44,7 +49,7 @@ public class PartyInviteController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable String partyId,
             @RequestBody AcceptInviteRequest request) {
-        watchPartyService.acceptInvite(currentUser.getId(), partyId, request.token());
+        watchPartyService.acceptInvite(requireUsername(currentUser), partyId, request.token());
         return ResponseEntity.ok(ApiResponse.success("Joined watch party successfully."));
     }
 
@@ -55,7 +60,7 @@ public class PartyInviteController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable String partyId,
             @RequestBody DeclineInviteRequest request) {
-        watchPartyService.declineInvite(currentUser.getId(), partyId, request.token());
+        watchPartyService.declineInvite(requireUsername(currentUser), partyId, request.token());
         return ResponseEntity.ok(ApiResponse.success("Invite declined."));
     }
 
@@ -65,7 +70,14 @@ public class PartyInviteController {
     public ResponseEntity<ApiResponse<PartyStateResponse>> getPartyState(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable String partyId) {
-        PartyStateResponse state = watchPartyService.getPartyState(partyId, currentUser.getId());
+        PartyStateResponse state = watchPartyService.getPartyState(partyId, requireUsername(currentUser));
         return ResponseEntity.ok(ApiResponse.success(state, "Party state retrieved successfully."));
+    }
+
+    private String requireUsername(CustomUserDetails currentUser) {
+        if (currentUser == null || !StringUtils.hasText(currentUser.getUsername())) {
+            throw WatchPartyException.missingUsername();
+        }
+        return currentUser.getUsername().trim();
     }
 }

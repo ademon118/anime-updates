@@ -12,11 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Builder
 public class WatchParty {
     private final String partyId;
-    private String leaderId;
+    private String leaderUsername;
 
     private final Map<String, PendingInvite> pendingInvites = new ConcurrentHashMap<>();
 
+    /** Joined party members, keyed by unique username. */
     private final Set<String> joinedMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    /** Currently connected members, keyed by unique username. */
     private final Set<String> activeMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private String videoUrl;
@@ -24,12 +26,12 @@ public class WatchParty {
     private boolean isPlaying;
     private long lastUpdated;
 
-    public void addMember(String userId) {
-        joinedMembers.add(userId);
+    public void addMember(String username) {
+        joinedMembers.add(username);
     }
 
-    public void removeMember(String userId) {
-        joinedMembers.remove(userId);
-        activeMembers.remove(userId);
+    public void removeMember(String username) {
+        joinedMembers.remove(username);
+        activeMembers.remove(username);
     }
 }

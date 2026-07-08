@@ -46,4 +46,8 @@ public class WatchPartyException extends RuntimeException {
     public static WatchPartyException alreadyMember() {
         return new WatchPartyException(HttpStatus.CONFLICT, "already_member", "That friend is already in the party.");
     }
+
+    public static WatchPartyException missingUsername() {
+        return new WatchPartyException(HttpStatus.INTERNAL_SERVER_ERROR, "missing_username", "Account username is required for watch party.");
+    }
 }

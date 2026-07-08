@@ -60,8 +60,8 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
             reject("partyId is required");
         }
 
-        String userId = String.valueOf(user.getId());
-        assertJoinedMember(partyId, userId, "CONNECT");
+        String username = resolveUsername(user);
+        assertJoinedMember(partyId, username, "CONNECT");
 
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes == null) {
@@ -69,14 +69,13 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         sessionAttributes.put("partyId", partyId);
-        sessionAttributes.put("userId", userId);
-        sessionAttributes.put("username", resolveUsername(user));
+        sessionAttributes.put("username", username);
         sessionAttributes.put("user", user);
 
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
 
-        membershipService.markOnline(partyId, userId);
-        log.info("Watch party WebSocket connected: partyId={} userId={}", partyId, userId);
+        membershipService.markOnline(partyId, username);
+        log.info("Watch party WebSocket connected: partyId={} username={}", partyId, username);
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -87,14 +86,14 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
 
         String partyId = destination.substring("/topic/party/".length());
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
-        String userId = sessionAttributes != null ? (String) sessionAttributes.get("userId") : null;
+        String username = sessionAttributes != null ? (String) sessionAttributes.get("username") : null;
 
-        if (userId == null) {
-            log.warn("Watch party SUBSCRIBE missing session userId: partyId={} destination={}", partyId, destination);
+        if (username == null) {
+            log.warn("Watch party SUBSCRIBE missing session username: partyId={} destination={}", partyId, destination);
             reject("WebSocket session is not established");
         }
 
-        assertJoinedMember(partyId, userId, "SUBSCRIBE");
+        assertJoinedMember(partyId, username, "SUBSCRIBE");
     }
 
     private void ensureSessionUser(StompHeaderAccessor accessor) {
@@ -107,29 +106,28 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
 
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
-        if (sessionAttributes != null && sessionAttributes.get("userId") == null && user.getId() != null) {
-            sessionAttributes.put("userId", String.valueOf(user.getId()));
+        if (sessionAttributes != null && sessionAttributes.get("username") == null) {
             sessionAttributes.put("username", resolveUsername(user));
             sessionAttributes.put("user", user);
         }
     }
 
-    private void assertJoinedMember(String partyId, String userId, String phase) {
+    private void assertJoinedMember(String partyId, String username, String phase) {
         Optional<WatchParty> partyOpt = watchPartyManager.getParty(partyId);
         if (partyOpt.isEmpty()) {
-            log.warn("Watch party {} rejected, party not found: partyId={} userId={}", phase, partyId, userId);
+            log.warn("Watch party {} rejected, party not found: partyId={} username={}", phase, partyId, username);
             reject("Party not found");
         }
 
         WatchParty party = partyOpt.get();
-        if (!party.getJoinedMembers().contains(userId)) {
+        if (!party.getJoinedMembers().contains(username)) {
             log.warn(
-                    "Watch party {} rejected, not a member: partyId={} userId={} members={} leaderId={}",
+                    "Watch party {} rejected, not a member: partyId={} username={} members={} leaderUsername={}",
                     phase,
                     partyId,
-                    userId,
+                    username,
                     party.getJoinedMembers(),
-                    party.getLeaderId()
+                    party.getLeaderUsername()
             );
             reject("Access denied");
         }
@@ -172,9 +170,9 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
     private String resolveUsername(CustomUserDetails user) {
         String username = user.getUsername();
         if (username == null || username.isBlank()) {
-            return String.valueOf(user.getId());
+            reject("Account username is required for watch party");
         }
-        return username;
+        return username.trim();
     }
 
     private void reject(String reason) {

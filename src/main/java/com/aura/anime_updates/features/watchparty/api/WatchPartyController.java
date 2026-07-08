@@ -31,10 +31,10 @@ public class WatchPartyController {
                                  SyncAction action,
                                  @AuthenticationPrincipal CustomUserDetails sender,
                                  SimpMessageHeaderAccessor headerAccessor) {
-        String userId = resolveUserId(sender, headerAccessor);
-        if (userId == null) {
+        String username = resolveUsername(sender, headerAccessor);
+        if (username == null) {
             log.warn(
-                    "Watch party sync dropped: no userId partyId={} action={} principal={}",
+                    "Watch party sync dropped: no username partyId={} action={} principal={}",
                     partyId,
                     action.action(),
                     sender
@@ -45,45 +45,43 @@ public class WatchPartyController {
         WatchParty party = watchPartyManager.getParty(partyId).orElse(null);
         if (party == null) {
             log.warn(
-                    "Watch party sync dropped: party not found partyId={} userId={} action={}",
+                    "Watch party sync dropped: party not found partyId={} username={} action={}",
                     partyId,
-                    userId,
+                    username,
                     action.action()
             );
             return null;
         }
 
-        if (!party.getJoinedMembers().contains(userId)) {
+        if (!party.getJoinedMembers().contains(username)) {
             log.warn(
-                    "Watch party sync dropped: user not member partyId={} userId={} members={} action={}",
+                    "Watch party sync dropped: user not member partyId={} username={} members={} action={}",
                     partyId,
-                    userId,
+                    username,
                     party.getJoinedMembers(),
                     action.action()
             );
             return null;
         }
 
-        if (action.action() == SyncActionType.LOAD_VIDEO && !party.getLeaderId().equals(userId)) {
+        if (action.action() == SyncActionType.LOAD_VIDEO && !party.getLeaderUsername().equals(username)) {
             log.warn(
-                    "Watch party sync dropped: non-leader LOAD_VIDEO partyId={} userId={}",
+                    "Watch party sync dropped: non-leader LOAD_VIDEO partyId={} username={}",
                     partyId,
-                    userId
+                    username
             );
             return null;
         }
 
-        String senderName = resolveSenderName(userId, headerAccessor, sender);
-
         if (action.action() == SyncActionType.LEAVE) {
-            return membershipService.leaveExplicitly(partyId, userId, senderName).orElse(null);
+            return membershipService.leaveExplicitly(partyId, username).orElse(null);
         }
 
         if (action.action() == SyncActionType.PRESENCE) {
             log.warn(
-                    "Watch party sync dropped: client PRESENCE partyId={} userId={}",
+                    "Watch party sync dropped: client PRESENCE partyId={} username={}",
                     partyId,
-                    userId
+                    username
             );
             return null;
         }
@@ -92,48 +90,24 @@ public class WatchPartyController {
             return null;
         }
 
-        SyncAction broadcast = applyAction(party, action, senderName);
+        if (action.action() == SyncActionType.JOIN) {
+            // Membership JOIN is broadcast from acceptInvite; client JOIN is presence-only.
+            return null;
+        }
+
+        SyncAction broadcast = applyAction(party, action, username);
         party.setLastUpdated(System.currentTimeMillis());
         log.info(
-                "Watch party broadcast partyId={} action={} from={} userId={} videoUrl={}",
+                "Watch party broadcast partyId={} action={} from={} videoUrl={}",
                 partyId,
                 broadcast.action(),
-                senderName,
-                userId,
+                username,
                 broadcast.videoUrl()
         );
         return broadcast;
     }
 
-    /**
-     * Session userId is set on CONNECT and is the most reliable identity for STOMP SEND.
-     */
-    private String resolveUserId(CustomUserDetails sender, SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
-        if (sessionAttributes != null) {
-            Object sessionUserId = sessionAttributes.get("userId");
-            if (sessionUserId != null && !sessionUserId.toString().isBlank()) {
-                return sessionUserId.toString().trim();
-            }
-
-            Object sessionUser = sessionAttributes.get("user");
-            if (sessionUser instanceof CustomUserDetails details && details.getId() != null) {
-                return String.valueOf(details.getId());
-            }
-        }
-
-        if (sender != null && sender.getId() != null) {
-            return String.valueOf(sender.getId());
-        }
-
-        return null;
-    }
-
-    private String resolveSenderName(
-            String userId,
-            SimpMessageHeaderAccessor headerAccessor,
-            CustomUserDetails sender
-    ) {
+    private String resolveUsername(CustomUserDetails sender, SimpMessageHeaderAccessor headerAccessor) {
         Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
         if (sessionAttributes != null) {
             Object sessionUsername = sessionAttributes.get("username");
@@ -145,11 +119,11 @@ public class WatchPartyController {
         if (sender != null) {
             String username = sender.getUsername();
             if (username != null && !username.isBlank()) {
-                return username;
+                return username.trim();
             }
         }
 
-        return userId;
+        return null;
     }
 
     private SyncAction applyAction(WatchParty party, SyncAction action, String senderUsername) {
@@ -180,14 +154,16 @@ public class WatchPartyController {
                     .isPlaying(party.isPlaying())
                     .videoUrl(party.getVideoUrl())
                     .senderUsername(senderUsername)
-                    .leaderId(party.getLeaderId())
+                    .leaderUsername(party.getLeaderUsername())
                     .build();
-            case JOIN, LEADER_CHANGE -> SyncAction.builder()
+            case LEADER_CHANGE -> SyncAction.builder()
                     .action(action.action())
                     .senderUsername(senderUsername)
-                    .leaderId(party.getLeaderId())
+                    .leaderUsername(party.getLeaderUsername())
                     .members(Set.copyOf(party.getJoinedMembers()))
+                    .activeMembers(Set.copyOf(party.getActiveMembers()))
                     .build();
+            case JOIN -> throw new IllegalStateException("JOIN is broadcast from acceptInvite only");
             case LEAVE -> throw new IllegalStateException("LEAVE is handled by WatchPartyMembershipService");
             case PRESENCE -> throw new IllegalStateException("PRESENCE is server-only");
             case HEARTBEAT -> throw new IllegalStateException("HEARTBEAT is keepalive-only");

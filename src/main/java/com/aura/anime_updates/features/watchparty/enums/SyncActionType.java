@@ -8,5 +8,6 @@ public enum SyncActionType {
     SYNC_REQUEST,
     JOIN,
     LEAVE,
-    LEADER_CHANGE
+    LEADER_CHANGE,
+    PRESENCE
 }

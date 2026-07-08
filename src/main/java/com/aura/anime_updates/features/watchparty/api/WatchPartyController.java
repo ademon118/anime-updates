@@ -78,6 +78,15 @@ public class WatchPartyController {
             return membershipService.leaveExplicitly(partyId, userId, senderName).orElse(null);
         }
 
+        if (action.action() == SyncActionType.PRESENCE) {
+            log.warn(
+                    "Watch party sync dropped: client PRESENCE partyId={} userId={}",
+                    partyId,
+                    userId
+            );
+            return null;
+        }
+
         SyncAction broadcast = applyAction(party, action, senderName);
         party.setLastUpdated(System.currentTimeMillis());
         log.info(
@@ -170,6 +179,7 @@ public class WatchPartyController {
                     .build();
             case JOIN, LEADER_CHANGE -> action.withSender(senderUsername);
             case LEAVE -> throw new IllegalStateException("LEAVE is handled by WatchPartyMembershipService");
+            case PRESENCE -> throw new IllegalStateException("PRESENCE is server-only");
         };
     }
 }

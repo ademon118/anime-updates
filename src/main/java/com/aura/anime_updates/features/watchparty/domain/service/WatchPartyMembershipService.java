@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Manages who is in a party ({@code joinedMembers}) vs who is currently connected ({@code activeMembers}).
@@ -41,6 +42,7 @@ public class WatchPartyMembershipService {
         partyManager.getParty(partyId).ifPresent(party -> {
             party.getActiveMembers().add(userId);
             log.info("Watch party member online partyId={} userId={}", partyId, userId);
+            publishPresence(partyId, party);
         });
     }
 
@@ -48,6 +50,7 @@ public class WatchPartyMembershipService {
         partyManager.getParty(partyId).ifPresent(party -> {
             party.getActiveMembers().remove(userId);
             log.info("Watch party member offline partyId={} userId={}", partyId, userId);
+            publishPresence(partyId, party);
         });
 
         presenceScheduler.scheduleOfflineGracePeriod(
@@ -96,12 +99,6 @@ public class WatchPartyMembershipService {
         boolean departingUserWasLeader = userId.equals(party.getLeaderId());
         party.removeMember(userId);
 
-        SyncAction leaveBroadcast = SyncAction.builder()
-                .action(SyncActionType.LEAVE)
-                .senderUsername(senderName)
-                .leaderId(party.getLeaderId())
-                .build();
-
         log.info(
                 "Watch party member removed partyId={} userId={} cause={} remainingMembers={}",
                 partyId,
@@ -113,20 +110,38 @@ public class WatchPartyMembershipService {
         if (party.getJoinedMembers().isEmpty()) {
             partyManager.removeParty(partyId);
             log.info("Watch party dissolved (empty) partyId={}", partyId);
-            return Optional.of(MemberLeaveResult.dissolved(partyId, leaveBroadcast));
+            return Optional.of(MemberLeaveResult.dissolved(
+                    partyId,
+                    buildLeaveBroadcast(senderName, party.getLeaderId())
+            ));
         }
 
         Optional<SyncAction> leaderChangeBroadcast = Optional.empty();
         if (departingUserWasLeader) {
             leaderChangeBroadcast = resolveDepartureOfLeader(partyId, party);
             if (partyManager.getParty(partyId).isEmpty()) {
-                return Optional.of(MemberLeaveResult.dissolved(partyId, leaveBroadcast));
+                return Optional.of(MemberLeaveResult.dissolved(
+                        partyId,
+                        buildLeaveBroadcast(senderName, party.getLeaderId())
+                ));
             }
         } else {
             partyManager.cleanupIfAbandoned(partyId, party);
         }
 
-        return Optional.of(MemberLeaveResult.remaining(partyId, leaveBroadcast, leaderChangeBroadcast));
+        return Optional.of(MemberLeaveResult.remaining(
+                partyId,
+                buildLeaveBroadcast(senderName, party.getLeaderId()),
+                leaderChangeBroadcast
+        ));
+    }
+
+    private SyncAction buildLeaveBroadcast(String senderName, String leaderId) {
+        return SyncAction.builder()
+                .action(SyncActionType.LEAVE)
+                .senderUsername(senderName)
+                .leaderId(leaderId)
+                .build();
     }
 
     /**
@@ -146,17 +161,46 @@ public class WatchPartyMembershipService {
             return Optional.empty();
         }
 
-        log.info("Watch party leadership transferred partyId={} newLeaderId={}", partyId, newLeaderId.get());
+        String promotedLeaderId = newLeaderId.get();
+        resetGraceForPromotedLeader(partyId, party, promotedLeaderId);
+        log.info("Watch party leadership transferred partyId={} newLeaderId={}", partyId, promotedLeaderId);
         return Optional.of(SyncAction.builder()
                 .action(SyncActionType.LEADER_CHANGE)
-                .leaderId(newLeaderId.get())
+                .leaderId(promotedLeaderId)
                 .build());
+    }
+
+    /**
+     * Cancels any stale offline grace for the promoted leader and, when they are still disconnected,
+     * starts a fresh grace window from the transfer moment so they are not removed seconds later.
+     */
+    private void resetGraceForPromotedLeader(String partyId, WatchParty party, String newLeaderId) {
+        presenceScheduler.cancelOfflineGracePeriod(partyId, newLeaderId);
+        if (!party.getActiveMembers().contains(newLeaderId)) {
+            presenceScheduler.scheduleOfflineGracePeriod(
+                    partyId,
+                    newLeaderId,
+                    () -> removeJoinedMemberAfterGraceExpiry(partyId, newLeaderId)
+            );
+            log.info(
+                    "Watch party fresh offline grace for promoted leader partyId={} userId={}",
+                    partyId,
+                    newLeaderId
+            );
+        }
     }
 
     private void publishLeaveResult(MemberLeaveResult result) {
         publishToPartyTopic(result.partyId(), result.leaveBroadcast());
         result.leaderChangeBroadcast()
                 .ifPresent(action -> publishToPartyTopic(result.partyId(), action));
+    }
+
+    private void publishPresence(String partyId, WatchParty party) {
+        publishToPartyTopic(partyId, SyncAction.builder()
+                .action(SyncActionType.PRESENCE)
+                .activeMembers(Set.copyOf(party.getActiveMembers()))
+                .build());
     }
 
     private void publishToPartyTopic(String partyId, SyncAction action) {

@@ -87,6 +87,10 @@ public class WatchPartyController {
             return null;
         }
 
+        if (action.action() == SyncActionType.HEARTBEAT) {
+            return null;
+        }
+
         SyncAction broadcast = applyAction(party, action, senderName);
         party.setLastUpdated(System.currentTimeMillis());
         log.info(
@@ -180,6 +184,7 @@ public class WatchPartyController {
             case JOIN, LEADER_CHANGE -> action.withSender(senderUsername);
             case LEAVE -> throw new IllegalStateException("LEAVE is handled by WatchPartyMembershipService");
             case PRESENCE -> throw new IllegalStateException("PRESENCE is server-only");
+            case HEARTBEAT -> throw new IllegalStateException("HEARTBEAT is keepalive-only");
         };
     }
 }

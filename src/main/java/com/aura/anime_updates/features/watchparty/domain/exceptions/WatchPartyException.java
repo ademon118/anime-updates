@@ -48,6 +48,18 @@ public class WatchPartyException extends RuntimeException {
     }
 
     public static WatchPartyException missingUsername() {
-        return new WatchPartyException(HttpStatus.INTERNAL_SERVER_ERROR, "missing_username", "Account username is required for watch party.");
+        return new WatchPartyException(
+                HttpStatus.UNAUTHORIZED,
+                "missing_username",
+                "Account username is required for watch party. Please log in again."
+        );
+    }
+
+    public static WatchPartyException missingFriendUsername() {
+        return new WatchPartyException(
+                HttpStatus.BAD_REQUEST,
+                "missing_friend_username",
+                "friendUsername is required."
+        );
     }
 }

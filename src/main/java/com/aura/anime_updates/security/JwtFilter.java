@@ -3,6 +3,8 @@ package com.aura.anime_updates.security;
 import com.aura.anime_updates.features.authentication.domain.entity.RefreshToken;
 import com.aura.anime_updates.features.authentication.domain.repository.RefreshTokenRepository;
 import com.aura.anime_updates.features.authentication.domain.service.JwtService;
+import com.aura.anime_updates.features.user.domain.entity.User;
+import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
@@ -15,17 +17,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
 
+@Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
@@ -48,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         return;
                     }
                     Long userId = jwtService.getUserId(jws);
-                    String username = (String) jws.getPayload().get("username");
+                    String username = resolveUsername(jws, userId);
 
                     CustomUserDetails currentUser = new CustomUserDetails(userId, username, "", Collections.emptyList());
                     UsernamePasswordAuthenticationToken auth =
@@ -64,5 +69,18 @@ public class JwtFilter extends OncePerRequestFilter {
             }
         }
         chain.doFilter(req, res);
+    }
+
+    private String resolveUsername(Jws<Claims> jws, Long userId) {
+        String username = jws.getPayload().get("username", String.class);
+        if (StringUtils.hasText(username)) {
+            return username.trim();
+        }
+
+        return userRepository.findById(userId)
+                .map(User::getUserName)
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .orElse(null);
     }
 }

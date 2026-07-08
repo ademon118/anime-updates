@@ -8,6 +8,8 @@ import com.aura.anime_updates.features.watchparty.api.response.PartyInviteRespon
 import com.aura.anime_updates.features.watchparty.api.response.PartyStateResponse;
 import com.aura.anime_updates.features.watchparty.domain.exceptions.WatchPartyException;
 import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyService;
+import com.aura.anime_updates.features.user.domain.entity.User;
+import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import com.aura.anime_updates.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class PartyInviteController {
 
     private final WatchPartyService watchPartyService;
+    private final UserRepository userRepository;
 
     @Operation(
             summary = "Invite a friend to a watch party",
@@ -35,9 +38,12 @@ public class PartyInviteController {
     public ResponseEntity<ApiResponse<PartyInviteResponse>> inviteFriend(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody InviteRequest request) {
+        if (!StringUtils.hasText(request.friendUsername())) {
+            throw WatchPartyException.missingFriendUsername();
+        }
         PartyInviteResponse response = watchPartyService.inviteFriend(
                 requireUsername(currentUser),
-                request.friendUsername()
+                request.friendUsername().trim()
         );
         return ResponseEntity.ok(ApiResponse.success(response, "Invite created successfully."));
     }
@@ -75,9 +81,17 @@ public class PartyInviteController {
     }
 
     private String requireUsername(CustomUserDetails currentUser) {
-        if (currentUser == null || !StringUtils.hasText(currentUser.getUsername())) {
+        if (currentUser == null) {
             throw WatchPartyException.missingUsername();
         }
-        return currentUser.getUsername().trim();
+        if (StringUtils.hasText(currentUser.getUsername())) {
+            return currentUser.getUsername().trim();
+        }
+
+        return userRepository.findById(currentUser.getId())
+                .map(User::getUserName)
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .orElseThrow(WatchPartyException::missingUsername);
     }
 }

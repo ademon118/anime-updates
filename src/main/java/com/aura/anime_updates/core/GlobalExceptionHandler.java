@@ -3,12 +3,14 @@ package com.aura.anime_updates.core;
 import com.aura.anime_updates.features.authentication.domain.exceptions.InvalidCredentialsException;
 import com.aura.anime_updates.features.friends.domain.exceptions.FriendException;
 import com.aura.anime_updates.features.watchparty.domain.exceptions.WatchPartyException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidCredentialsException.class)
@@ -23,6 +25,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(WatchPartyException.class)
     public ResponseEntity<ErrorResponse> handleWatchPartyException(WatchPartyException ex) {
+        log.warn("Watch party request rejected: code={} status={} message={}",
+                ex.getCode(), ex.getStatus().value(), ex.getMessage());
         return buildErrorResponse(ex.getStatus(), ex.getCode(), ex.getMessage());
     }
 

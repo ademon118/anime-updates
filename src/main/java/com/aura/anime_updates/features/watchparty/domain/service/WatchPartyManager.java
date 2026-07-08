@@ -103,11 +103,22 @@ public class WatchPartyManager {
         return Optional.of(newLeader);
     }
 
+    /**
+     * Dissolves a party when the leader is the only joined member and there is nothing pending.
+     * Skips dissolution when that leader is offline — their offline grace timer will remove them
+     * and transfer leadership or dissolve through the normal leave flow.
+     */
     public void cleanupIfAbandoned(String partyId, WatchParty party) {
         boolean leaderAlone = party.getJoinedMembers().size() == 1
                 && party.getJoinedMembers().contains(party.getLeaderId());
-        if (leaderAlone && party.getPendingInvites().isEmpty()) {
-            removeParty(partyId);
+        if (!leaderAlone || !party.getPendingInvites().isEmpty()) {
+            return;
         }
+
+        if (!party.getActiveMembers().contains(party.getLeaderId())) {
+            return;
+        }
+
+        removeParty(partyId);
     }
 }

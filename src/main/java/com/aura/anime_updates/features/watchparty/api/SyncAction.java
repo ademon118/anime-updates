@@ -3,6 +3,8 @@ package com.aura.anime_updates.features.watchparty.api;
 import com.aura.anime_updates.features.watchparty.enums.SyncActionType;
 import lombok.Builder;
 
+import java.util.Set;
+
 @Builder
 public record SyncAction(
         SyncActionType action,
@@ -10,9 +12,10 @@ public record SyncAction(
         boolean isPlaying,
         String videoUrl,
         String senderUsername,
-        String leaderId
+        String leaderId,
+        Set<String> activeMembers
 ) {
     public SyncAction withSender(String senderUsername) {
-        return new SyncAction(action, timestamp, isPlaying, videoUrl, senderUsername, leaderId);
+        return new SyncAction(action, timestamp, isPlaying, videoUrl, senderUsername, leaderId, activeMembers);
     }
 }

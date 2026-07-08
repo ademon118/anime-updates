@@ -13,9 +13,19 @@ public record SyncAction(
         String videoUrl,
         String senderUsername,
         String leaderId,
-        Set<String> activeMembers
+        Set<String> activeMembers,
+        Set<String> members
 ) {
     public SyncAction withSender(String senderUsername) {
-        return new SyncAction(action, timestamp, isPlaying, videoUrl, senderUsername, leaderId, activeMembers);
+        return new SyncAction(
+                action,
+                timestamp,
+                isPlaying,
+                videoUrl,
+                senderUsername,
+                leaderId,
+                activeMembers,
+                members
+        );
     }
 }

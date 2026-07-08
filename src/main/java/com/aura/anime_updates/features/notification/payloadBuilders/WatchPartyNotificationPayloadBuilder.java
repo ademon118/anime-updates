@@ -35,10 +35,16 @@ public class WatchPartyNotificationPayloadBuilder {
         );
     }
 
-    public Map<String, String> buildDeclineData(String partyId) {
+    public Map<String, String> buildDeclineData(
+            String partyId,
+            String declinedUserId,
+            String declinedUsername
+    ) {
         return Map.of(
                 "type", DECLINED_TYPE,
-                "partyId", partyId
+                "partyId", partyId,
+                "declinedUserId", declinedUserId,
+                "declinedUsername", declinedUsername
         );
     }
 }

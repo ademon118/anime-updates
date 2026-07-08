@@ -5,7 +5,6 @@ import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
 import com.aura.anime_updates.features.watchparty.enums.SyncActionType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -25,16 +24,16 @@ public class WatchPartyMembershipService {
 
     private final WatchPartyManager partyManager;
     private final CleanupService presenceScheduler;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final WatchPartySyncPublisher syncPublisher;
 
     public WatchPartyMembershipService(
             WatchPartyManager partyManager,
             CleanupService presenceScheduler,
-            @Lazy SimpMessagingTemplate messagingTemplate
+            @Lazy WatchPartySyncPublisher syncPublisher
     ) {
         this.partyManager = partyManager;
         this.presenceScheduler = presenceScheduler;
-        this.messagingTemplate = messagingTemplate;
+        this.syncPublisher = syncPublisher;
     }
 
     public void markOnline(String partyId, String userId) {
@@ -112,7 +111,7 @@ public class WatchPartyMembershipService {
             log.info("Watch party dissolved (empty) partyId={}", partyId);
             return Optional.of(MemberLeaveResult.dissolved(
                     partyId,
-                    buildLeaveBroadcast(senderName, party.getLeaderId())
+                    syncPublisher.buildLeaveBroadcast(senderName, party.getLeaderId(), Set.of())
             ));
         }
 
@@ -122,7 +121,7 @@ public class WatchPartyMembershipService {
             if (partyManager.getParty(partyId).isEmpty()) {
                 return Optional.of(MemberLeaveResult.dissolved(
                         partyId,
-                        buildLeaveBroadcast(senderName, party.getLeaderId())
+                        syncPublisher.buildLeaveBroadcast(senderName, party.getLeaderId(), Set.of())
                 ));
             }
         } else {
@@ -131,17 +130,13 @@ public class WatchPartyMembershipService {
 
         return Optional.of(MemberLeaveResult.remaining(
                 partyId,
-                buildLeaveBroadcast(senderName, party.getLeaderId()),
+                syncPublisher.buildLeaveBroadcast(
+                        senderName,
+                        party.getLeaderId(),
+                        Set.copyOf(party.getJoinedMembers())
+                ),
                 leaderChangeBroadcast
         ));
-    }
-
-    private SyncAction buildLeaveBroadcast(String senderName, String leaderId) {
-        return SyncAction.builder()
-                .action(SyncActionType.LEAVE)
-                .senderUsername(senderName)
-                .leaderId(leaderId)
-                .build();
     }
 
     /**
@@ -191,21 +186,17 @@ public class WatchPartyMembershipService {
     }
 
     private void publishLeaveResult(MemberLeaveResult result) {
-        publishToPartyTopic(result.partyId(), result.leaveBroadcast());
+        syncPublisher.publishToParty(result.partyId(), result.leaveBroadcast());
         result.leaderChangeBroadcast()
-                .ifPresent(action -> publishToPartyTopic(result.partyId(), action));
+                .ifPresent(action -> syncPublisher.publishToParty(result.partyId(), action));
     }
 
     private void publishPresence(String partyId, WatchParty party) {
-        publishToPartyTopic(partyId, SyncAction.builder()
-                .action(SyncActionType.PRESENCE)
-                .activeMembers(Set.copyOf(party.getActiveMembers()))
-                .build());
+        syncPublisher.publishPresence(partyId, Set.copyOf(party.getActiveMembers()));
     }
 
     private void publishToPartyTopic(String partyId, SyncAction action) {
-        messagingTemplate.convertAndSend("/topic/party/" + partyId, action);
-        log.info("Watch party published {} partyId={}", action.action(), partyId);
+        syncPublisher.publishToParty(partyId, action);
     }
 
     private enum LeaveCause {

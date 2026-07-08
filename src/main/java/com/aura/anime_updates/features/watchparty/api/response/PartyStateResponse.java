@@ -12,6 +12,7 @@ public record PartyStateResponse(
         double currentTimeStamp,
         boolean isPlaying,
         Set<String> members,
-        Set<String> activeMembers
+        Set<String> activeMembers,
+        Set<String> pendingInviteUserIds
 ) {
 }

@@ -16,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class WatchPartyService {
     private final NotificationService notificationService;
     private final WatchPartyNotificationPayloadBuilder notificationPayloadBuilder;
     private final CleanupService cleanupService;
+    private final WatchPartySyncPublisher syncPublisher;
 
     public PartyInviteResponse inviteFriend(Long leaderId, Long friendId) {
         if (leaderId.equals(friendId)) {
@@ -115,6 +118,10 @@ public class WatchPartyService {
 
         cleanupService.cancelInviteExpiry(partyId, token);
         party.addMember(String.valueOf(userId));
+
+        User joiner = userRepository.findById(userId)
+                .orElseThrow(() -> FriendException.userNotFound(String.valueOf(userId)));
+        syncPublisher.publishMemberJoined(party, joiner.getUserName());
     }
 
     public void declineInvite(Long userId, String partyId, String token) {
@@ -136,7 +143,11 @@ public class WatchPartyService {
                 .orElseThrow(() -> FriendException.userNotFound(party.getLeaderId()));
 
         Notification notification = notificationPayloadBuilder.buildDeclineNotification(friend.getUserName());
-        var data = notificationPayloadBuilder.buildDeclineData(partyId);
+        var data = notificationPayloadBuilder.buildDeclineData(
+                partyId,
+                String.valueOf(userId),
+                friend.getUserName()
+        );
         notificationService.sendNotificationToAllDevicesOfUsers(List.of(leader), notification, data);
 
         manager.cleanupIfAbandoned(partyId, party);
@@ -157,6 +168,18 @@ public class WatchPartyService {
                 .isPlaying(party.isPlaying())
                 .members(party.getJoinedMembers())
                 .activeMembers(party.getActiveMembers())
+                .pendingInviteUserIds(resolvePendingInviteUserIds(party, userId))
                 .build();
+    }
+
+    private Set<String> resolvePendingInviteUserIds(WatchParty party, Long requesterUserId) {
+        if (!party.getLeaderId().equals(String.valueOf(requesterUserId))) {
+            return Set.of();
+        }
+
+        return party.getPendingInvites().values().stream()
+                .filter(invite -> !invite.isExpired())
+                .map(PendingInvite::friendId)
+                .collect(Collectors.toSet());
     }
 }

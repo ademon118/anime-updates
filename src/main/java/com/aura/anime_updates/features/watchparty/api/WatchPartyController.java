@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Controller
@@ -181,7 +182,12 @@ public class WatchPartyController {
                     .senderUsername(senderUsername)
                     .leaderId(party.getLeaderId())
                     .build();
-            case JOIN, LEADER_CHANGE -> action.withSender(senderUsername);
+            case JOIN, LEADER_CHANGE -> SyncAction.builder()
+                    .action(action.action())
+                    .senderUsername(senderUsername)
+                    .leaderId(party.getLeaderId())
+                    .members(Set.copyOf(party.getJoinedMembers()))
+                    .build();
             case LEAVE -> throw new IllegalStateException("LEAVE is handled by WatchPartyMembershipService");
             case PRESENCE -> throw new IllegalStateException("PRESENCE is server-only");
             case HEARTBEAT -> throw new IllegalStateException("HEARTBEAT is keepalive-only");

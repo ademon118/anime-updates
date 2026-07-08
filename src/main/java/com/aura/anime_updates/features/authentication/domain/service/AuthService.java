@@ -8,6 +8,8 @@ import com.aura.anime_updates.features.authentication.domain.exceptions.InvalidC
 import com.aura.anime_updates.features.authentication.domain.repository.RefreshTokenRepository;
 import com.aura.anime_updates.features.authentication.util.TokenHasher;
 import com.aura.anime_updates.features.fireBaseToken.domain.service.FcmTokenService;
+import com.aura.anime_updates.features.user.domain.entity.User;
+import com.aura.anime_updates.features.user.domain.repository.UserRepository;
 import com.aura.anime_updates.features.user.domain.service.UserService;
 import com.aura.anime_updates.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
@@ -18,6 +20,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 
@@ -30,6 +33,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshRepo;
     private final TokenHasher hasher;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final FcmTokenService fcmTokenService;
 
     public AuthResponse register(AuthRequest request) {
@@ -79,6 +83,11 @@ public class AuthService {
         Long userId = jwt.getUserId(jws);
 
         String username = jws.getPayload().get("username", String.class);
+        if (!StringUtils.hasText(username)) {
+            username = userRepository.findById(userId)
+                    .map(User::getUserName)
+                    .orElseThrow(() -> new IllegalStateException("User not found for refresh token"));
+        }
 
         RefreshToken db = refreshRepo.findByJti(jti)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown refresh token"));

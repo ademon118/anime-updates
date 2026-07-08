@@ -9,5 +9,6 @@ public enum SyncActionType {
     JOIN,
     LEAVE,
     LEADER_CHANGE,
-    PRESENCE
+    PRESENCE,
+    HEARTBEAT
 }

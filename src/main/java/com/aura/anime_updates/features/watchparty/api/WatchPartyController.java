@@ -2,6 +2,7 @@ package com.aura.anime_updates.features.watchparty.api;
 
 import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
 import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyManager;
+import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyMembershipService;
 import com.aura.anime_updates.features.watchparty.enums.SyncActionType;
 import com.aura.anime_updates.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class WatchPartyController {
 
     private final WatchPartyManager watchPartyManager;
+    private final WatchPartyMembershipService membershipService;
 
     @MessageMapping("/party/{partyId}/sync")
     @SendTo("/topic/party/{partyId}")
@@ -71,6 +73,11 @@ public class WatchPartyController {
         }
 
         String senderName = resolveSenderName(userId, headerAccessor, sender);
+
+        if (action.action() == SyncActionType.LEAVE) {
+            return membershipService.leaveExplicitly(partyId, userId, senderName).orElse(null);
+        }
+
         SyncAction broadcast = applyAction(party, action, senderName);
         party.setLastUpdated(System.currentTimeMillis());
         log.info(
@@ -161,7 +168,8 @@ public class WatchPartyController {
                     .senderUsername(senderUsername)
                     .leaderId(party.getLeaderId())
                     .build();
-            case JOIN, LEAVE, LEADER_CHANGE -> action.withSender(senderUsername);
+            case JOIN, LEADER_CHANGE -> action.withSender(senderUsername);
+            case LEAVE -> throw new IllegalStateException("LEAVE is handled by WatchPartyMembershipService");
         };
     }
 }

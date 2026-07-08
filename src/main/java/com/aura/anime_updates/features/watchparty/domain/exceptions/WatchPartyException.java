@@ -42,4 +42,8 @@ public class WatchPartyException extends RuntimeException {
     public static WatchPartyException leaderOnly() {
         return new WatchPartyException(HttpStatus.FORBIDDEN, "leader_only", "Only the party creator can load a video.");
     }
+
+    public static WatchPartyException alreadyMember() {
+        return new WatchPartyException(HttpStatus.CONFLICT, "already_member", "That friend is already in the party.");
+    }
 }

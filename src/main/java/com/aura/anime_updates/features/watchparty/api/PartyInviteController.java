@@ -24,7 +24,10 @@ public class PartyInviteController {
 
     private final WatchPartyService watchPartyService;
 
-    @Operation(summary = "Invite a friend to a watch party", description = "Creates a new party with the caller as leader and returns an invite token for the friend")
+    @Operation(
+            summary = "Invite a friend to a watch party",
+            description = "Creates a party when the caller has none, or adds a pending invite to the caller's existing party"
+    )
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/invite")
     public ResponseEntity<ApiResponse<PartyInviteResponse>> inviteFriend(

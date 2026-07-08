@@ -13,6 +13,12 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class WatchPartyManager {
     private final Map<String, WatchParty> activeParties = new ConcurrentHashMap<>();
+    private final Map<String, String> activePartyIdByLeaderId = new ConcurrentHashMap<>();
+    private final Map<String, Object> leaderInviteLocks = new ConcurrentHashMap<>();
+
+    public Object leaderInviteLock(String leaderId) {
+        return leaderInviteLocks.computeIfAbsent(leaderId, ignored -> new Object());
+    }
 
     public WatchParty createParty(String leaderId, String partyId) {
         WatchParty party = WatchParty.builder()
@@ -24,6 +30,7 @@ public class WatchPartyManager {
                 .build();
         party.addMember(leaderId);
         activeParties.put(partyId, party);
+        registerActivePartyForLeader(leaderId, partyId);
         return party;
     }
 
@@ -31,8 +38,44 @@ public class WatchPartyManager {
         return Optional.ofNullable(activeParties.get(partyId));
     }
 
+    public Optional<WatchParty> findActivePartyForLeader(String leaderId) {
+        String partyId = activePartyIdByLeaderId.get(leaderId);
+        if (partyId == null) {
+            return Optional.empty();
+        }
+
+        WatchParty party = activeParties.get(partyId);
+        if (party == null) {
+            activePartyIdByLeaderId.remove(leaderId, partyId);
+            return Optional.empty();
+        }
+
+        if (!leaderId.equals(party.getLeaderId())) {
+            activePartyIdByLeaderId.remove(leaderId, partyId);
+            return Optional.empty();
+        }
+
+        return Optional.of(party);
+    }
+
+    public void registerActivePartyForLeader(String leaderId, String partyId) {
+        activePartyIdByLeaderId.put(leaderId, partyId);
+    }
+
+    public void unregisterActivePartyForLeader(String leaderId, String partyId) {
+        activePartyIdByLeaderId.remove(leaderId, partyId);
+    }
+
+    public void recordLeadershipTransfer(String partyId, String previousLeaderId, String newLeaderId) {
+        unregisterActivePartyForLeader(previousLeaderId, partyId);
+        registerActivePartyForLeader(newLeaderId, partyId);
+    }
+
     public void removeParty(String partyId) {
-        activeParties.remove(partyId);
+        WatchParty party = activeParties.remove(partyId);
+        if (party != null) {
+            unregisterActivePartyForLeader(party.getLeaderId(), partyId);
+        }
     }
 
     public boolean isMember(String partyId, String userId) {
@@ -54,7 +97,9 @@ public class WatchPartyManager {
 
         List<String> candidates = new ArrayList<>(party.getJoinedMembers());
         String newLeader = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        String previousLeaderId = party.getLeaderId();
         party.setLeaderId(newLeader);
+        recordLeadershipTransfer(party.getPartyId(), previousLeaderId, newLeader);
         return Optional.of(newLeader);
     }
 

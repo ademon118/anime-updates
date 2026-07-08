@@ -1,93 +1,85 @@
 package com.aura.anime_updates.features.watchparty.domain.service;
 
 import com.aura.anime_updates.features.watchparty.domain.entity.PendingInvite;
-import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.concurrent.*;
 
+@Slf4j
 @Service
 public class CleanupService {
 
-    private static final long GRACE_PERIOD_SECONDS = 60;
+    public static final long OFFLINE_GRACE_SECONDS = 60;
     public static final long INVITE_TTL_SECONDS = 900;
 
-    private final WatchPartyManager manager;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final WatchPartyManager partyManager;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final Map<String, ScheduledFuture<?>> gracePeriods = new ConcurrentHashMap<>();
-    private final Map<String, ScheduledFuture<?>> inviteExpiries = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> offlineGraceTasks = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> inviteExpiryTasks = new ConcurrentHashMap<>();
 
-    public CleanupService(WatchPartyManager manager, @Lazy SimpMessagingTemplate messagingTemplate) {
-        this.manager = manager;
-        this.messagingTemplate = messagingTemplate;
+    public CleanupService(WatchPartyManager partyManager) {
+        this.partyManager = partyManager;
     }
 
-    public void startGracePeriod(String partyId, String userId) {
-        manager.getParty(partyId).ifPresent(p -> p.getActiveMembers().remove(userId));
+    public void scheduleOfflineGracePeriod(String partyId, String userId, Runnable onGraceExpired) {
+        cancelOfflineGracePeriod(partyId, userId);
 
-        String key = graceKey(partyId, userId);
-        cancelExisting(key);
-
+        String taskKey = offlineGraceKey(partyId, userId);
         ScheduledFuture<?> task = scheduler.schedule(() -> {
-            gracePeriods.remove(key);
-            manager.getParty(partyId).ifPresent(party -> expireMember(partyId, party, userId));
-        }, GRACE_PERIOD_SECONDS, TimeUnit.SECONDS);
+            offlineGraceTasks.remove(taskKey);
+            log.info("Watch party offline grace expired partyId={} userId={}", partyId, userId);
+            onGraceExpired.run();
+        }, OFFLINE_GRACE_SECONDS, TimeUnit.SECONDS);
 
-        gracePeriods.put(key, task);
+        offlineGraceTasks.put(taskKey, task);
+        log.info(
+                "Watch party offline grace scheduled partyId={} userId={} seconds={}",
+                partyId,
+                userId,
+                OFFLINE_GRACE_SECONDS
+        );
     }
 
-    private void expireMember(String partyId, WatchParty party, String userId) {
-        // Grace period only marks the user offline; membership stays until explicit leave.
-        party.getActiveMembers().remove(userId);
-    }
-
-    public void cancelGracePeriod(String partyId, String userId) {
-        String key = graceKey(partyId, userId);
-        cancelScheduled(gracePeriods, key);
-        manager.getParty(partyId).ifPresent(p -> p.getActiveMembers().add(userId));
+    public void cancelOfflineGracePeriod(String partyId, String userId) {
+        cancelTask(offlineGraceTasks, offlineGraceKey(partyId, userId));
     }
 
     public void scheduleInviteExpiry(String partyId, String token) {
-        String key = inviteKey(partyId, token);
-        cancelScheduled(inviteExpiries, key);
+        String taskKey = inviteExpiryKey(partyId, token);
+        cancelTask(inviteExpiryTasks, taskKey);
 
         ScheduledFuture<?> task = scheduler.schedule(() -> {
-            inviteExpiries.remove(key);
-            manager.getParty(partyId).ifPresent(party -> {
+            inviteExpiryTasks.remove(taskKey);
+            partyManager.getParty(partyId).ifPresent(party -> {
                 PendingInvite invite = party.getPendingInvites().remove(token);
                 if (invite != null) {
-                    manager.cleanupIfAbandoned(partyId, party);
+                    log.info("Watch party invite expired partyId={} token={}", partyId, token);
+                    partyManager.cleanupIfAbandoned(partyId, party);
                 }
             });
         }, INVITE_TTL_SECONDS, TimeUnit.SECONDS);
 
-        inviteExpiries.put(key, task);
+        inviteExpiryTasks.put(taskKey, task);
     }
 
     public void cancelInviteExpiry(String partyId, String token) {
-        cancelScheduled(inviteExpiries, inviteKey(partyId, token));
+        cancelTask(inviteExpiryTasks, inviteExpiryKey(partyId, token));
     }
 
-    private void cancelScheduled(Map<String, ScheduledFuture<?>> tasks, String key) {
-        ScheduledFuture<?> existing = tasks.remove(key);
+    private void cancelTask(Map<String, ScheduledFuture<?>> tasks, String taskKey) {
+        ScheduledFuture<?> existing = tasks.remove(taskKey);
         if (existing != null) {
             existing.cancel(false);
         }
     }
 
-    private void cancelExisting(String key) {
-        cancelScheduled(gracePeriods, key);
+    private String offlineGraceKey(String partyId, String userId) {
+        return partyId + ":offline:" + userId;
     }
 
-    private String graceKey(String partyId, String userId) {
-        return partyId + ":" + userId;
-    }
-
-    private String inviteKey(String partyId, String token) {
+    private String inviteExpiryKey(String partyId, String token) {
         return partyId + ":invite:" + token;
     }
 }

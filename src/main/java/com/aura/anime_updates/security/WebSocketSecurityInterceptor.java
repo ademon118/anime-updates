@@ -1,8 +1,8 @@
 package com.aura.anime_updates.security;
 
 import com.aura.anime_updates.features.watchparty.domain.entity.WatchParty;
-import com.aura.anime_updates.features.watchparty.domain.service.CleanupService;
 import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyManager;
+import com.aura.anime_updates.features.watchparty.domain.service.WatchPartyMembershipService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -24,7 +24,7 @@ import java.util.Optional;
 public class WebSocketSecurityInterceptor implements ChannelInterceptor {
 
     private final WatchPartyManager watchPartyManager;
-    private final CleanupService cleanupService;
+    private final WatchPartyMembershipService membershipService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -40,8 +40,6 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
                 handleSubscribe(accessor);
             } else if (StompCommand.SEND.equals(accessor.getCommand())) {
                 ensureSessionUser(accessor);
-            } else if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
-                handleDisconnect(accessor);
             }
         } catch (MessageDeliveryException ex) {
             log.warn("Watch party WebSocket rejected: {}", ex.getMessage());
@@ -63,7 +61,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
 
         String userId = String.valueOf(user.getId());
-        assertMember(partyId, userId, "CONNECT");
+        assertJoinedMember(partyId, userId, "CONNECT");
 
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes == null) {
@@ -77,9 +75,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
 
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
 
-        cleanupService.cancelGracePeriod(partyId, userId);
-        watchPartyManager.getParty(partyId).ifPresent(party -> party.getActiveMembers().add(userId));
-
+        membershipService.markOnline(partyId, userId);
         log.info("Watch party WebSocket connected: partyId={} userId={}", partyId, userId);
     }
 
@@ -98,7 +94,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
             reject("WebSocket session is not established");
         }
 
-        assertMember(partyId, userId, "SUBSCRIBE");
+        assertJoinedMember(partyId, userId, "SUBSCRIBE");
     }
 
     private void ensureSessionUser(StompHeaderAccessor accessor) {
@@ -118,21 +114,7 @@ public class WebSocketSecurityInterceptor implements ChannelInterceptor {
         }
     }
 
-    private void handleDisconnect(StompHeaderAccessor accessor) {
-        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
-        if (sessionAttributes == null) {
-            return;
-        }
-
-        String partyId = (String) sessionAttributes.get("partyId");
-        String userId = (String) sessionAttributes.get("userId");
-
-        if (partyId != null && userId != null) {
-            watchPartyManager.getParty(partyId).ifPresent(party -> party.getActiveMembers().remove(userId));
-        }
-    }
-
-    private void assertMember(String partyId, String userId, String phase) {
+    private void assertJoinedMember(String partyId, String userId, String phase) {
         Optional<WatchParty> partyOpt = watchPartyManager.getParty(partyId);
         if (partyOpt.isEmpty()) {
             log.warn("Watch party {} rejected, party not found: partyId={} userId={}", phase, partyId, userId);

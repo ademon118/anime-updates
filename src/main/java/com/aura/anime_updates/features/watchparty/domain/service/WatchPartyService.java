@@ -42,27 +42,61 @@ public class WatchPartyService {
         User friend = userRepository.findById(friendId)
                 .orElseThrow(() -> FriendException.userNotFound(String.valueOf(friendId)));
 
-        String partyId = UUID.randomUUID().toString();
-        WatchParty party = manager.createParty(String.valueOf(leaderId), partyId);
+        String leaderIdValue = String.valueOf(leaderId);
+        String friendIdValue = String.valueOf(friendId);
 
-        String token = UUID.randomUUID().toString();
-        long expiresAt = System.currentTimeMillis() + (CleanupService.INVITE_TTL_SECONDS * 1000);
-        party.getPendingInvites().put(token, new PendingInvite(String.valueOf(friendId), expiresAt));
-        cleanupService.scheduleInviteExpiry(partyId, token);
+        synchronized (manager.leaderInviteLock(leaderIdValue)) {
+            WatchParty party = manager.findActivePartyForLeader(leaderIdValue)
+                    .orElseGet(() -> {
+                        String partyId = UUID.randomUUID().toString();
+                        return manager.createParty(leaderIdValue, partyId);
+                    });
 
+            if (party.getJoinedMembers().contains(friendIdValue)) {
+                throw WatchPartyException.alreadyMember();
+            }
+
+            replacePendingInviteIfPresent(party, friendIdValue);
+
+            String inviteToken = UUID.randomUUID().toString();
+            long expiresAt = System.currentTimeMillis() + (CleanupService.INVITE_TTL_SECONDS * 1000);
+            party.getPendingInvites().put(inviteToken, new PendingInvite(friendIdValue, expiresAt));
+            cleanupService.scheduleInviteExpiry(party.getPartyId(), inviteToken);
+
+            sendInviteNotification(leader, friend, party.getPartyId(), inviteToken);
+
+            return PartyInviteResponse.builder()
+                    .partyId(party.getPartyId())
+                    .inviteToken(inviteToken)
+                    .build();
+        }
+    }
+
+    private void replacePendingInviteIfPresent(WatchParty party, String friendId) {
+        String partyId = party.getPartyId();
+        party.getPendingInvites().entrySet().removeIf(entry -> {
+            if (!friendId.equals(entry.getValue().friendId())) {
+                return false;
+            }
+            cleanupService.cancelInviteExpiry(partyId, entry.getKey());
+            return true;
+        });
+    }
+
+    private void sendInviteNotification(
+            User leader,
+            User friend,
+            String partyId,
+            String inviteToken
+    ) {
         Notification notification = notificationPayloadBuilder.buildInviteNotification(leader.getUserName());
         var data = notificationPayloadBuilder.buildInviteData(
                 partyId,
-                token,
-                String.valueOf(leaderId),
+                inviteToken,
+                String.valueOf(leader.getId()),
                 leader.getUserName()
         );
         notificationService.sendNotificationToAllDevicesOfUsers(List.of(friend), notification, data);
-
-        return PartyInviteResponse.builder()
-                .partyId(partyId)
-                .inviteToken(token)
-                .build();
     }
 
     public void acceptInvite(Long userId, String partyId, String token) {

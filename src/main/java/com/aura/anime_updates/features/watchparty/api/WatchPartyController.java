@@ -73,6 +73,15 @@ public class WatchPartyController {
             return null;
         }
 
+        if (action.action() == SyncActionType.STOP_VIDEO && !party.getLeaderUsername().equals(username)) {
+            log.warn(
+                    "Watch party sync dropped: non-leader STOP_VIDEO partyId={} username={}",
+                    partyId,
+                    username
+            );
+            return null;
+        }
+
         if (action.action() == SyncActionType.LEAVE) {
             return membershipService.leaveExplicitly(partyId, username).orElse(null);
         }
@@ -147,6 +156,16 @@ public class WatchPartyController {
                 party.setCurrentTimeStamp(0.0);
                 party.setPlaying(false);
                 yield action.withSender(senderUsername);
+            }
+            case STOP_VIDEO -> {
+                party.setVideoUrl(null);
+                party.setCurrentTimeStamp(0.0);
+                party.setPlaying(false);
+                yield SyncAction.builder()
+                        .action(SyncActionType.STOP_VIDEO)
+                        .senderUsername(senderUsername)
+                        .leaderUsername(party.getLeaderUsername())
+                        .build();
             }
             case SYNC_REQUEST -> SyncAction.builder()
                     .action(SyncActionType.SYNC_REQUEST)

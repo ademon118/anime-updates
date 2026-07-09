@@ -5,6 +5,7 @@ public enum SyncActionType {
     PAUSE,
     SEEK,
     LOAD_VIDEO,
+    STOP_VIDEO,
     SYNC_REQUEST,
     JOIN,
     LEAVE,

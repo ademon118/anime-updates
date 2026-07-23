@@ -26,12 +26,23 @@ public class NotificationService {
                 .stream()
                 .map(FcmToken::getToken)
                 .toList();
+        AndroidConfig androidConfig = AndroidConfig.builder()
+                .setPriority(AndroidConfig.Priority.HIGH)
+                .setTtl(86400L * 1000L)
+                .setNotification(AndroidNotification.builder()
+                        .setChannelId("anime_updates_channel")
+                        .setPriority(AndroidNotification.Priority.HIGH)
+                        .setVisibility(AndroidNotification.Visibility.PUBLIC)
+                        .setSound("default")
+                        .build())
+                .build();
 
         if(!tokensToSendTo.isEmpty()) {
             try {
                 MulticastMessage.Builder builder = MulticastMessage.builder()
                         .addAllTokens(tokensToSendTo)
-                        .setNotification(notification);
+                        .setNotification(notification)
+                        .setAndroidConfig(androidConfig);
 
                 if(dataPayload != null){
                     builder.putAllData(dataPayload);

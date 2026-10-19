@@ -28,6 +28,7 @@ public class ImageFetchingService {
             if(jsonObject.has("data") && jsonObject.getJSONArray("data").length() > 0) {
                 return jsonObject.getJSONArray("data")
                         .getJSONObject(0)
+                        .getJSONObject("attributes")
                         .getJSONObject("posterImage")
                         .getString("original");
             }

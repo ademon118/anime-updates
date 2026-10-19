@@ -16,21 +16,20 @@ import java.util.List;
 @Slf4j
 public class ImageFetchingService {
 
-    private final String JIKAN_API = "https://api.jikan.moe/v4/anime?q={title}";
+    private final String IMAGE_API = "https://kitsu.io/api/edge/anime?filter[text]={title}&filter[status]=current,finished&sort=-startDate";
     private final RestTemplate restTemplate = new RestTemplate();
     private final AnimeShowRepository animeShowRepository;
 
     public String fetchImageForAnimeShow(String title) {
         try {
-            String jikanResponse = restTemplate.getForObject(JIKAN_API, String.class, title);
-            JSONObject jsonObject = new JSONObject(jikanResponse);
+            String apiResponse = restTemplate.getForObject(IMAGE_API, String.class, title);
+            JSONObject jsonObject = new JSONObject(apiResponse);
 
             if(jsonObject.has("data") && jsonObject.getJSONArray("data").length() > 0) {
                 return jsonObject.getJSONArray("data")
                         .getJSONObject(0)
-                        .getJSONObject("images")
-                        .getJSONObject("jpg")
-                        .getString("large_image_url");
+                        .getJSONObject("posterImage")
+                        .getString("original");
             }
             return null;
         } catch(Exception e) {
